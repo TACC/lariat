@@ -1,0 +1,35 @@
+#!/usr/bin/env lua
+-- -*- lua -*-
+require("strict")
+require("string_split")
+require("VarDump")
+require("Dbg")
+require("fileOps")
+require("capture")
+ignoreT = { tacc_affinity     = 1,
+            getmode_affinity  = 1,
+}
+
+
+function main()
+
+   local cmd="unknown"
+
+   for i = 1, #arg do
+      if (not ignoreT[arg[i]]) then
+         cmd = arg[i]
+         break;
+      end
+   end
+   local path=os.getenv("PATH") or ""
+
+   local execPath = findInPath(cmd,path)
+
+   local ldd = os.execute("ldd "..execPath)
+
+
+   print (ldd)
+
+end
+
+main()

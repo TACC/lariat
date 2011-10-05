@@ -1,4 +1,5 @@
 #!/bin/bash
+# -*- shell-script -*-
 
 MODE=`/share/sge6.2/default/pe_scripts/getmode.sh`
 

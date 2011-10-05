@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+# -*- shell-script -*-
 
 ## Look through all the arguments to ibrun.  If the user asked for help (-h)
 ## print the help and then exit immediately.
@@ -45,7 +46,7 @@ srq_size=2048
 default_time_out=23
   
 # Find out which MPI stack we're using
-MODE=`/share/sge6.2/default/pe_scripts/getmode.sh`
+MODE=`getmode.sh`
 
 # Set our files and directories
 home_sge_dir="$HOME/.sge"
@@ -165,7 +166,6 @@ elif [ x"$MODE" == "xopenmpi_ssh" -o x"$MODE" == "xopenmpi_1.3_ssh" ]; then
   IFS='
 '
   for l in `cat $pe_hostfile`; do
-#    h=`echo $l| sed -e 's/^\([ci][0-9]\+-[0-9]\+.ranger.tacc.utexas.edu\) \+\([0-9]\+\).*/\1/g'`
     h=`echo $l| sed -e 's/^\([ci][0-9]\+-[0-9]\+\|ivis[0-9a-z]\+\).ranger.tacc.utexas.edu \+\([0-9]\+\).*/\1.ranger.tacc.utexas.edu/g' | sort -n`
     echo "$h slots=$pe_ppn" >> $hostfile_tacc
   done
@@ -322,6 +322,10 @@ if [ $res -ne 0 ]; then
 fi
 
 
+checkExec $cmd "$@"
+
+exit
+
 # Double check the executable name specified to ibrun
 fullcmd=`which $cmd 2>/dev/null`
 if [ $? -ne 0 ]; then
@@ -329,6 +333,10 @@ if [ $? -ne 0 ]; then
 #  exit 1
     fullcmd="$cmd"
 fi
+
+
+
+
 
 
 ## Modify $hostfile_tacc if user passed special options to ibrun
@@ -364,8 +372,8 @@ elif [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MO
 
     # How sweet is this?  MVAPICH1 AND MVAPICH2 using the same baby.
 
-    TACC_ENV=`/share/sge6.2/default/pe_scripts/build_env.pl`
-    $MPICH_HOME/bin/mpirun_rsh -np $MY_NSLOTS -hostfile $hostfile_tacc $TACC_ENV $fullcmd "$@"
+    TACC_ENV=`build_env.pl`
+    echo $MPICH_HOME/bin/mpirun_rsh -np $MY_NSLOTS -hostfile $hostfile_tacc $TACC_ENV $fullcmd "$@"
     res=$?
 
 

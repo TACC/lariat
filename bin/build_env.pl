@@ -30,10 +30,7 @@ my %exclude;
 foreach (@env_exclude_list) { $exclude{$_} = 1; }
 
 foreach (keys %ENV) {
-#                     To remove env vars set to NULL vvvvvvvvvvvvvvvvvvv
-#   unless ($exclude{$_} || $ENV{$_} =~ m/[ \n\t;*]/ || $ENV{$_} =~ /^$/        ) { $varenv .= " $_=$ENV{$_} "; }
-#   unless ($exclude{$_} || $ENV{$_} =~ m/[ \n\t;*]/                            ) { $varenv .= " $_=$ENV{$_} "; }
-    unless ($exclude{$_} || $_ =~  /$env_begin_with/ || $ENV{$_} =~ m/[ \n\t;*]/) { $varenv .= " $_=$ENV{$_} ";}
+    unless ($exclude{$_} || $_ =~  /$env_begin_with/ || $ENV{$_} =~ m/[ \n\t;*]/) { $varenv .= " $_=\"$ENV{$_}\" ";}
 }
 
 # Report length of environment string, in the reported environment 

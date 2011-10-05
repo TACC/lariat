@@ -1,0 +1,25 @@
+#!/bin/bash
+# -*- shell-script -*-
+
+export TACC_MPI_GETMODE="mvapich2_ssh"
+
+cat > /tmp/$$$$ <<EOF
+i143-205.ranger.tacc.utexas.edu
+i175-309.ranger.tacc.utexas.edu
+i118-411.ranger.tacc.utexas.edu
+i101-312.ranger.tacc.utexas.edu
+i167-203.ranger.tacc.utexas.edu
+i173-205.ranger.tacc.utexas.edu
+i164-104.ranger.tacc.utexas.edu
+i132-401.ranger.tacc.utexas.edu
+EOF
+
+export PE_HOSTFILE=/tmp/$$$$
+export NSLOTS=32
+export PE="16way"
+
+export PATH=$HOME/w/ibrun/src/$TARG:$PATH
+
+ibrun -n 2 -o 3 tacc_affinity helloC -a -b
+
+rm $PE_HOSTFILE
