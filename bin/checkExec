@@ -6,10 +6,58 @@ require("VarDump")
 require("Dbg")
 require("fileOps")
 require("capture")
-ignoreT = { tacc_affinity     = 1,
-            getmode_affinity  = 1,
+local getenv = os.getenv
+local concatTbl = table.concat
+ignoreT = {
+   tacc_affinity     = 1,
+   getmode_affinity  = 1,
 }
 
+mpi2libT = {
+   hecura   = "libmpich%.",
+   mvapich2 = "libmpich%.",
+   mvapich  = "libmpich%.",
+   openmpi  = "libmpi%."
+}
+ignoreLines = {
+   "^LMOD",
+   "^export",
+   "^MODULEPATH",
+}
+   
+
+
+activeList = {}
+
+function matchExecWmodules(l, mpiStack, compiler, libName)
+
+   local lmod_cmd = getenv("LMOD_CMD")
+   local s        = capture(lmod_cmd .. " bash tablelist 2>&1 ")
+
+   local a = {}
+   for l in s:split("\n") do
+      local keep = true
+      for i = 1,#ignoreLines do
+         if (l:find(ignoreLines[i])) then
+            keep = false
+            break
+         end
+      end
+      if (keep) then
+         a[#a+1] = l
+      end
+   end
+
+   s = concatTbl(a,"\n")
+   assert(loadstring(s))()
+
+   print ("compiler: ", compiler, " version " , activeList[compiler])
+   print ("mpi: ", mpiStack, " version " , activeList[mpiStack])
+
+   l = l:gsub("lib/" .. libName .. ".*","")
+   print (l)
+
+end
 
 function main()
 
@@ -21,14 +69,26 @@ function main()
          break;
       end
    end
-   local path=os.getenv("PATH") or ""
+   local path=getenv("PATH") or ""
 
    local execPath = findInPath(cmd,path)
 
-   local ldd = os.execute("ldd "..execPath)
+   local ldd = capture("ldd "..execPath)
 
+   local mpiStack = getenv("TACC_FAMILY_MPI")      or "unknown"
+   local compiler = getenv("TACC_FAMILY_COMPILER") or "unknown"
+   local libName  = mpi2libT[mpiStack]
 
-   print (ldd)
+   if (libName == nil) then
+      return 0
+   end
+
+   for l in ldd:split("\n") do
+      if (l:find(libName)) then
+         print (l)
+         matchExecWmodules(l, mpiStack, compiler, libName)
+      end
+   end
 
 end
 
