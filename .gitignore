@@ -3,3 +3,7 @@
 *.o
 hello
 OBJ
+config.log
+config.status
+makefile
+

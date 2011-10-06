@@ -1,10 +1,8 @@
 # $Id: Makefile.in 701 2011-02-08 22:27:13Z mclay $
 PATH_TO_LUA	:= @PATH_TO_LUA@
 prefix		:= @prefix@
-package		:= ibrun
 version		:= 1.0
-PKG		:= $(prefix)/$(package)/$(package)
-BIN		:= $(prefix)/$(package)/$(version)/bin
+BIN		:= $(prefix)/bin
 
 DIRLIST		:= $(DESTDIR)$(BIN)
 
@@ -28,7 +26,7 @@ __installMe:
           [ -n "$(DIRLOC)" ] && mv $$fn $(DESTDIR)$(DIRLOC) && chmod +x $(DESTDIR)$(DIRLOC)/$$fn; \
         done
 
-bin: $(BIN)
+bin: $(STANDALONE_PRGM)
 	$(MAKE) FILELIST="$^" DIRLOC=$(BIN)    __installMe
 
 makefile: Makefile.in config.status
@@ -52,7 +50,7 @@ _distBin:
 	cp $(STANDALONE_PRGM) $(DistD)/bin
 
 _distTar:
-	echo "Lmod"-$(version) > .fname;                		   \
+	echo "ibrun"-$(version) > .fname;                		   \
 	$(RM) -r `cat .fname` `cat .fname`.tar*;         		   \
 	mv ${DistD} `cat .fname`;                            		   \
 	tar chf `cat .fname`.tar `cat .fname`;           		   \
