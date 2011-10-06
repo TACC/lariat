@@ -1,4 +1,4 @@
-#!/opt/apps/lua/lua/bin/lua
+#!@path_to_lua@/lua
 -- -*- lua -*-
 require("strict")
 require("string_split")

@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
   MPI_Comm_size(MPI_COMM_WORLD, &nProc);
 
   if (myProc == 0)
-    std::cout << "Hello World from proc: " << myProc << " out of "<< nProc << "!\n";
+    std::cout << "\nHello World from proc: " << myProc << " out of "<< nProc << "!\n\n";
 
   MPI_Finalize();
 

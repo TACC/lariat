@@ -324,8 +324,6 @@ fi
 
 checkExec $cmd "$@"
 
-exit
-
 # Double check the executable name specified to ibrun
 fullcmd=`which $cmd 2>/dev/null`
 if [ $? -ne 0 ]; then
@@ -373,7 +371,7 @@ elif [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MO
     # How sweet is this?  MVAPICH1 AND MVAPICH2 using the same baby.
 
     TACC_ENV=`build_env.pl`
-    echo $MPICH_HOME/bin/mpirun_rsh -np $MY_NSLOTS -hostfile $hostfile_tacc $TACC_ENV $fullcmd "$@"
+    $MPICH_HOME/bin/mpirun_rsh -np $MY_NSLOTS -hostfile $hostfile_tacc $TACC_ENV $fullcmd "$@"
     res=$?
 
 

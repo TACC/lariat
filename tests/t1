@@ -20,6 +20,11 @@ export PE="16way"
 
 export PATH=$HOME/w/ibrun/src/$TARG:$PATH
 
-ibrun -n 2 -o 3 tacc_affinity helloC -a -b
+#export CHECK_EXEC_DEBUG=1
+for i in `(cd ../src/OBJ; find . -name 'helloCXX')`; do
+  echo 
+  echo $i
+  ibrun -n 2 -o 3 tacc_affinity ../src/OBJ/$i -a -b
+done
 
 rm $PE_HOSTFILE

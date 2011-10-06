@@ -1,0 +1,104 @@
+# $Id: Makefile.in 701 2011-02-08 22:27:13Z mclay $
+PATH_TO_LUA	:= @PATH_TO_LUA@
+prefix		:= @prefix@
+package		:= ibrun
+version		:= 1.0
+PKG		:= $(prefix)/$(package)/$(package)
+BIN		:= $(prefix)/$(package)/$(version)/bin
+
+DIRLIST		:= $(DESTDIR)$(BIN)
+
+STANDALONE_PRGM := bin/build_env.pl  bin/checkExec.in  bin/getmode.sh  bin/ibrun  bin/tacc_affinity
+VDATE		:= $(shell date +'%F %H:%M')
+
+all:
+	@echo done
+
+install: $(DIRLIST) bin
+
+$(DIRLIST) :
+	mkdir -p $@
+
+__installMe:
+	-for i in $(FILELIST); do                                 \
+	  fn=`basename $$i .in`;                                  \
+          sed -e 's|@PREFIX@|@prefix@|g'                          \
+	      -e 's|@path_to_lua@|$(PATH_TO_LUA)|g'               \
+              -e 's|@PKG@|$(PKG)|g'         < $$i > $$fn;         \
+          [ -n "$(DIRLOC)" ] && mv $$fn $(DESTDIR)$(DIRLOC) && chmod +x $(DESTDIR)$(DIRLOC)/$$fn; \
+        done
+
+bin: $(BIN)
+	$(MAKE) FILELIST="$^" DIRLOC=$(BIN)    __installMe
+
+makefile: Makefile.in config.status
+	config.status $@
+
+config.status:
+	./config.status --recheck
+
+dist:  
+	$(MAKE) DistD=DIST _dist
+
+_dist: _distMkDir _distBin _distSetup _distReqPkg    \
+       _distMF    _distTar
+
+_distMkDir:
+	$(RM) -r $(DistD)
+	mkdir $(DistD)
+
+_distBin:
+	mkdir $(DistD)/bin
+	cp $(STANDALONE_PRGM) $(DistD)/bin
+
+_distTar:
+	echo "Lmod"-$(version) > .fname;                		   \
+	$(RM) -r `cat .fname` `cat .fname`.tar*;         		   \
+	mv ${DistD} `cat .fname`;                            		   \
+	tar chf `cat .fname`.tar `cat .fname`;           		   \
+	gzip `cat .fname`.tar;                           		   \
+	rm -rf `cat .fname` .fname; 
+
+
+tags:
+	find . \( -regex '.*~$$\|.*/\.svn$$\|.*/\.svn/' -prune \)  \
+               -o -type f > file_list.1
+	sed -e 's|.*/.svn.*||g'                                    \
+            -e 's|.*/rt/.*/t1/.*||g'                               \
+            -e 's|./TAGS||g'                                       \
+            -e 's|./configure$$||g'                                \
+            -e 's|./config.log$$||g'                               \
+            -e 's|./testreports/.*||g'                             \
+            -e 's|./config.status$$||g'                            \
+            -e 's|.*\~$$||g'                                       \
+            -e 's|./file_list.*||g'                                \
+            -e '/^\s*$$/d'                                         \
+	       < file_list.1 > file_list.2
+	etags  `cat file_list.2`
+	$(RM) file_list.*
+
+
+clean:
+	$(RM) config.log
+
+clobber: clean
+
+distclean: clobber
+	$(RM) makefile config.status
+
+gittag:
+        ifneq ($(TAG),)
+	  @git status -s > /tmp/ibrun$$$$;                                           \
+          if [ -s /tmp/ibrun$$$$ ]; then                                             \
+	    echo "All files not checked in => try again";                            \
+	  else                                                                       \
+	    $(RM)                                                    $(VERSION_SRC); \
+	    echo "module('Version')"                              >  $(VERSION_SRC); \
+	    echo 'function name() return "'$(TAG) $(VDATE)'" end' >> $(VERSION_SRC); \
+            git commit -m "moving to TAG_VERSION $(TAG)"             $(VERSION_SRC); \
+            git tag -a $(TAG) -m 'Setting TAG_VERSION to $(TAG)'                   ; \
+          fi;                                                                        \
+          rm -f /tmp/ibrun$$$$
+        else
+	  @echo "To git tag do: make gittag TAG=?"
+        endif
