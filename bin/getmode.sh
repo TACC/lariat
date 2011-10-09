@@ -50,6 +50,14 @@ else
   	builtin echo "mvapich2_ssh";;
       /opt/apps/*/mvapich-new/*)
   	builtin echo "mvapich1_ssh";;
+      /opt/apps/*/mvapich2/1.6)
+  	builtin echo "mvapich2_ssh";;
+      /share1/apps/*/mvapich2test/1.6)
+  	builtin echo "mvapich2_ssh";;
+      /share1/apps/*/mvapich1test/1.2rc1)
+  	builtin echo "mvapich1_ssh";;
+      /share1/apps/*/mvapich2-rel/*)
+  	builtin echo "mvapich2_ssh";;
       *)
   	builtin echo "UNKNOWN";;
   esac

@@ -1,39 +1,52 @@
 #!/bin/bash
 # -*- shell-script -*-
-
+ 
 ## Look through all the arguments to ibrun.  If the user asked for help (-h)
 ## print the help and then exit immediately.
 if [ "$1" == "-h" -o "$1" == "--help" -o "$1" == "-help" ]; then
-      ## User asked for a help message.  Exit after printing it.
-    echo "Basic Usage: "
-    echo "ibrun ./executable <execuable_opions>"
-    echo ""
-    echo "In normal usage, pass only the MPI executable name and any"
-    echo "options the executable requires."
-    echo ""
-    echo ""
-    echo "Advanced Usage:"
-    echo "ibrun -n <number of processors> -o <offset into processor hostlist> executable <execuable_opions>"
-    echo ""
-    echo "In this case you can specify a subset of processors from the"
-    echo "list of all hosts on which to run the executable, and an offset into the list"
-    echo "of processors to start numbering.  This allows you to e.g. launch two different"
-    echo "exectuables on two different subsets of the available hosts."
-    echo ""
-    echo "Example, parallel environment -pe 16way 32, executable 'mpihello'"
-    echo " We can do:"
-    echo " ./my_ibrun -n 16 -o 0  ./mpihello &"
-    echo " ./my_ibrun -n 16 -o 16 ./mpihello &"
-    echo " wait"
-    echo ""
-    echo "The first call launches a 16-processor job on the first 16 hosts in the hostfile,"
-    echo "The second call launches a 16-porcessor job on the second 16 hosts in the hostfile."
-    echo "The shell 'wait' command waits for all processes to finish before the shell exits."
-    exit 0
+  ## User asked for a help message.  Exit after printing it.
+  echo "Basic Usage: "
+  echo "ibrun ./executable <execuable_opions>"
+  echo ""
+  echo "In normal usage, pass only the MPI executable name and any"
+  echo "options the executable requires."
+  echo ""
+  echo ""
+  echo "Advanced Usage:"
+  echo "ibrun -n <number of processors> -o <offset into processor hostlist> executable <execuable_opions>"
+  echo ""
+  echo "In this case you can specify a subset of processors from the"
+  echo "list of all hosts on which to run the executable, and an offset into the list"
+  echo "of processors to start numbering.  This allows you to e.g. launch two different"
+  echo "exectuables on two different subsets of the available hosts."
+  echo ""
+  echo "Example, parallel environment -pe 16way 32, executable 'mpihello'"
+  echo " We can do:"
+  echo " ./my_ibrun -n 16 -o 0  ./mpihello &"
+  echo " ./my_ibrun -n 16 -o 16 ./mpihello &"
+  echo " wait"
+  echo ""
+  echo "The first call launches a 16-processor job on the first 16 hosts in the hostfile,"
+  echo "The second call launches a 16-processor job on the second 16 hosts in the hostfile."
+  echo "The shell 'wait' command waits for all processes to finish before the shell exits."
+  exit 0
 fi
 
-
 echo "TACC: Starting up job $JOB_ID"
+
+########################################################################
+# Figure out which system we are on.
+########################################################################
+nlocal=$(hostname -f)
+nA=($(builtin echo "$nlocal" | tr '.' ' '))
+first=${nA[0]}
+SYSHOST=${nA[1]}
+
+if [ "$first" = spur ]; then
+  SYSHOST=ranger
+fi
+
+fqdn="$SYSHOST.tacc.utexas.edu"
 
 # Get the PE hostfile, number of slots and wayness from the environment
 pe_hostfile=$PE_HOSTFILE
@@ -70,10 +83,6 @@ if [ -f $hostfile_tacc ]; then
 fi
 
 
-# Update for new OFED on 3/16/2011 - include /opt/ofed/lib64
-# directory to account for jobs submitted before change over. 
-
-export LD_LIBRARY_PATH=/opt/ofed/lib64:$LD_LIBRARY_PATH
 
 # Build hostfile for mvapich2 
 if [ x"$MODE" == xmvapich2_mpd ]; then
@@ -82,7 +91,8 @@ if [ x"$MODE" == xmvapich2_mpd ]; then
   export MV2_DEFAULT_TIME_OUT=$default_time_out
   echo "TACC: Setting up parallel environment for MVAPICH-2 MPD."
 
-  sed -e 's/^\([ci][0-9]\+-[0-9]\+\|ivis[0-9a-z]\+\).ranger.tacc.utexas.edu \+\([0-9]\+\).*/\1.ranger.tacc.utexas.edu:'$pe_ppn'/g' $pe_hostfile | sort -n > $hostfile_tacc
+# Don't use the full hostname
+  sed -e 's/^\([ci][0-9]\+-[0-9]\+\|ivis[0-9a-z]\+\).'$fqdn' \+\([0-9]\+\).*/\1:'$pe_ppn'/g' $pe_hostfile | sort -n > $hostfile_tacc
   num_mpds=`wc -l $hostfile_tacc| cut -d' ' -f1`
   local_ncpus=$pe_ppn
   slots=0
@@ -90,7 +100,7 @@ if [ x"$MODE" == xmvapich2_mpd ]; then
     slots=$(( $slots + $i ))
   done
   echo -n $slots > $nslotsfile_tacc
-  mpdboot --rsh=/share/sge6.2/default/pe_scripts/tacc_rsh --file=$hostfile_tacc -n $num_mpds --ncpus=$local_ncpus --verbose --maxbranch=16
+  mpdboot --rsh=$TACC_IBWRAPPER_DIR/tacc_rsh --file=$hostfile_tacc -n $num_mpds --ncpus=$local_ncpus --verbose --maxbranch=16
 
   if [ $? -ne 0 ]; then
     echo "TACC: MPD setup failed. Exiting."
@@ -129,8 +139,8 @@ elif [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MO
 
   # Process contents of SGE hostfile to make nice hostnames for the mvapich hostfile.
   for l in `cat $pe_hostfile`; do
-#    h=`echo $l| sed -e 's/^\([ci][0-9]\+-[0-9]\+.ranger.tacc.utexas.edu\) \+\([0-9]\+\).*/\1/g'`
-    h=`echo $l| sed -e 's/^\([ci][0-9]\+-[0-9]\+\|ivis[0-9a-z]\+\).ranger.tacc.utexas.edu \+\([0-9]\+\).*/\1.ranger.tacc.utexas.edu/g' | sort -n`
+# Don't use the full hostname
+    h=`echo $l| sed -e 's/^\([ci][0-9]\+-[0-9]\+\|ivis[0-9a-z]\+\).'$fqdn' \+\([0-9]\+\).*/\1/g' | sort -n`
 
     # Put each hostname into the hostfile $pe_ppn (wayness) times.
     for i in $(seq 1 $pe_ppn); do
@@ -166,7 +176,8 @@ elif [ x"$MODE" == "xopenmpi_ssh" -o x"$MODE" == "xopenmpi_1.3_ssh" ]; then
   IFS='
 '
   for l in `cat $pe_hostfile`; do
-    h=`echo $l| sed -e 's/^\([ci][0-9]\+-[0-9]\+\|ivis[0-9a-z]\+\).ranger.tacc.utexas.edu \+\([0-9]\+\).*/\1.ranger.tacc.utexas.edu/g' | sort -n`
+# Don't use the full hostname
+    h=`echo $l| sed -e 's/^\([ci][0-9]\+-[0-9]\+\|ivis[0-9a-z]\+\).'$fqdn' \+\([0-9]\+\).*/\1/g' | sort -n`
     echo "$h slots=$pe_ppn" >> $hostfile_tacc
   done
   unset IFS
@@ -333,10 +344,6 @@ if [ $? -ne 0 ]; then
 fi
 
 
-
-
-
-
 ## Modify $hostfile_tacc if user passed special options to ibrun
 if [ x"$ibrun_n_option" != "x" ]; then
   # Create a temporary file for the subset of hosts which we will run on.
@@ -370,7 +377,7 @@ elif [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MO
 
     # How sweet is this?  MVAPICH1 AND MVAPICH2 using the same baby.
 
-    TACC_ENV=`build_env.pl`
+    TACC_ENV=`$TACC_IBWRAPPER_DIR/build_env.pl`
     $MPICH_HOME/bin/mpirun_rsh -np $MY_NSLOTS -hostfile $hostfile_tacc $TACC_ENV $fullcmd "$@"
     res=$?
 
@@ -379,7 +386,7 @@ elif [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MO
 # This mvapich-devel case could be rolled up into the two cases above...
 elif [ x"$MODE" == "xmvapich1_devel_ssh" ]; then
     
-    TACC_ENV=`/share/sge6.2/default/pe_scripts/build_env.pl`
+    TACC_ENV=`$TACC_IBWRAPPER_DIR/build_env.pl`
     $MPICH_HOME/bin/mpirun_rsh -np $MY_NSLOTS -hostfile $hostfile_tacc $TACC_ENV $fullcmd "$@"
     res=$?
 
