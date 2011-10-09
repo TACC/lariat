@@ -49,7 +49,7 @@ fi
 fqdn="$SYSHOST.tacc.utexas.edu"
 
 if [ $SYSHOST = "ranger" ]; then
-  replacemnt=".${SYSHOST}.tacc.utexas.edu"
+  replacement=".${SYSHOST}.tacc.utexas.edu"
 fi
 
 
