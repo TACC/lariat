@@ -48,6 +48,11 @@ fi
 
 fqdn="$SYSHOST.tacc.utexas.edu"
 
+if [ $SYSHOST = "ranger" ]; then
+  replacemnt=".${SYSHOST}.tacc.utexas.edu"
+fi
+
+
 # Get the PE hostfile, number of slots and wayness from the environment
 pe_hostfile=$PE_HOSTFILE
 pe_slots=$NSLOTS
@@ -109,7 +114,7 @@ if [ x"$MODE" == xmvapich2_mpd ]; then
 
 
 
-# Build hostfile for mvapich1
+# Build hostfile for mvapich1 and mvapich2
 elif [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MODE" == "xmvapich2_ssh" ]; then
 
   echo "TACC: Setting up parallel environment for MVAPICH ssh-based mpirun."
@@ -139,8 +144,7 @@ elif [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MO
 
   # Process contents of SGE hostfile to make nice hostnames for the mvapich hostfile.
   for l in `cat $pe_hostfile`; do
-# Don't use the full hostname
-    h=`echo $l| sed -e 's/^\([ci][0-9]\+-[0-9]\+\|ivis[0-9a-z]\+\).'$fqdn' \+\([0-9]\+\).*/\1/g' | sort -n`
+    h=`echo $l| sed -e 's/^\([ci][0-9]\+-[0-9]\+\|ivis[0-9a-z]\+\).'$fqdn' \+\([0-9]\+\).*/\1'$replacement'/g' | sort -n`
 
     # Put each hostname into the hostfile $pe_ppn (wayness) times.
     for i in $(seq 1 $pe_ppn); do
@@ -176,8 +180,7 @@ elif [ x"$MODE" == "xopenmpi_ssh" -o x"$MODE" == "xopenmpi_1.3_ssh" ]; then
   IFS='
 '
   for l in `cat $pe_hostfile`; do
-# Don't use the full hostname
-    h=`echo $l| sed -e 's/^\([ci][0-9]\+-[0-9]\+\|ivis[0-9a-z]\+\).'$fqdn' \+\([0-9]\+\).*/\1/g' | sort -n`
+    h=`echo $l| sed -e 's/^\([ci][0-9]\+-[0-9]\+\|ivis[0-9a-z]\+\).'$fqdn' \+\([0-9]\+\).*/\1'$replacement'/g' | sort -n`
     echo "$h slots=$pe_ppn" >> $hostfile_tacc
   done
   unset IFS
