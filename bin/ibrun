@@ -100,7 +100,7 @@ if [ x"$MODE" == xmvapich2_mpd ]; then
     slots=$(( $slots + $i ))
   done
   echo -n $slots > $nslotsfile_tacc
-  mpdboot --rsh=$TACC_IBWRAPPER_DIR/tacc_rsh --file=$hostfile_tacc -n $num_mpds --ncpus=$local_ncpus --verbose --maxbranch=16
+  mpdboot --rsh=$TACC_IBWRAPPER_BIN/tacc_rsh --file=$hostfile_tacc -n $num_mpds --ncpus=$local_ncpus --verbose --maxbranch=16
 
   if [ $? -ne 0 ]; then
     echo "TACC: MPD setup failed. Exiting."
@@ -377,7 +377,7 @@ elif [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MO
 
     # How sweet is this?  MVAPICH1 AND MVAPICH2 using the same baby.
 
-    TACC_ENV=`$TACC_IBWRAPPER_DIR/build_env.pl`
+    TACC_ENV=`$TACC_IBWRAPPER_BIN/build_env.pl`
     $MPICH_HOME/bin/mpirun_rsh -np $MY_NSLOTS -hostfile $hostfile_tacc $TACC_ENV $fullcmd "$@"
     res=$?
 
@@ -386,7 +386,7 @@ elif [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MO
 # This mvapich-devel case could be rolled up into the two cases above...
 elif [ x"$MODE" == "xmvapich1_devel_ssh" ]; then
     
-    TACC_ENV=`$TACC_IBWRAPPER_DIR/build_env.pl`
+    TACC_ENV=`$TACC_IBWRAPPER_BIN/build_env.pl`
     $MPICH_HOME/bin/mpirun_rsh -np $MY_NSLOTS -hostfile $hostfile_tacc $TACC_ENV $fullcmd "$@"
     res=$?
 

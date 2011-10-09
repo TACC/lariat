@@ -12,7 +12,7 @@ VDATE		:= $(shell date +'%F %H:%M')
 all:
 	@echo done
 
-install: $(DIRLIST) bin
+install: $(DIRLIST) PRGMS
 
 $(DIRLIST) :
 	mkdir -p $@
@@ -26,7 +26,7 @@ __installMe:
           [ -n "$(DIRLOC)" ] && mv $$fn $(DESTDIR)$(DIRLOC) && chmod +x $(DESTDIR)$(DIRLOC)/$$fn; \
         done
 
-bin: $(STANDALONE_PRGM)
+PRGMS: $(STANDALONE_PRGM)
 	$(MAKE) FILELIST="$^" DIRLOC=$(BIN)    __installMe
 
 makefile: Makefile.in config.status
