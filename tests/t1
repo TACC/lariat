@@ -20,7 +20,7 @@ export PE="16way"
 
 export PATH=$HOME/w/ibrun/src/$TARG:$PATH
 
-#export CHECK_EXEC_DEBUG=1
+export RTM_IBRUN_DEBUG=1
 for i in `(cd ../src/OBJ; find . -name 'helloCXX')`; do
   echo 
   echo $i

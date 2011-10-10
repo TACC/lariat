@@ -346,6 +346,10 @@ if [ $? -ne 0 ]; then
     fullcmd="$cmd"
 fi
 
+if [ -n "$RTM_IBRUN_DEBUG" ]; then
+  exit
+fi
+
 
 ## Modify $hostfile_tacc if user passed special options to ibrun
 if [ x"$ibrun_n_option" != "x" ]; then
