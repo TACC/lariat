@@ -1,0 +1,23 @@
+#!/bin/bash
+# -*- shell-script -*-
+#$  -V
+#
+#$ -cwd
+#
+#$ -A A-ccsc
+#
+#$ -P hpc
+#
+#$ -N ibrun_t2
+#
+#$ -j y
+#
+#$ -o $JOB_NAME.o$JOB_ID
+#
+#$ -pe 12way 24
+#
+#$ -q systest
+#
+#$ -l h_rt=4:00:00
+
+. t2.core

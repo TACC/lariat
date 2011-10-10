@@ -1,0 +1,10 @@
+
+
+export PATH=$HOME/w/ibrun/src/$TARG:$PATH
+
+for i in `(cd ../src/OBJ; find . -name 'helloCXX')`; do
+  echo 
+  echo $i
+  ibrun tacc_affinity ../src/OBJ/$i
+done
+
