@@ -1,7 +1,7 @@
 #!/bin/bash
 # -*- shell-script -*-
 
-MODE=`/share/sge6.2/default/pe_scripts/getmode.sh`
+MODE=`$TACC_IBWRAPPER_BIN/getmode.sh`
 
 # First determine "wayness" of PE
 myway=`/bin/echo $PE | /bin/sed s/way//`
