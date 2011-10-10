@@ -29,6 +29,19 @@ ignoreLines = {
 
 activeList = {}
 
+function canonicalCompilerVersion(v)
+   v       = v or ""
+   v       = v:gsub("-[0-9]*","")
+   local a = {}
+   for vv in v:split("%.") do
+      a[#a+1] = vv
+      if (#a == 2) then break end
+   end
+   return table.concat(a,".")
+end
+
+
+
 function findEnvVersions(mpiStack, compiler)
    local lmod_cmd = getenv("LMOD_CMD")
    local s        = capture(lmod_cmd .. " bash tablelist 2>&1 ")
@@ -51,7 +64,7 @@ function findEnvVersions(mpiStack, compiler)
    assert(loadstring(s))()
 
    local sysT = {mpi="unknown",comp="unknown"}
-   local scv  = (activeList[compiler] or ""):gsub("-[0-9]*","")
+   local scv  = canonicalCompilerVersion(activeList[compiler])
    sysT.mpi  = mpiStack .."-"..tostring(activeList[mpiStack])
    sysT.comp = compiler .."-"..scv
 
