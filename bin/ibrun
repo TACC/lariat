@@ -22,8 +22,8 @@ if [ "$1" == "-h" -o "$1" == "--help" -o "$1" == "-help" ]; then
   echo ""
   echo "Example, parallel environment -pe 16way 32, executable 'mpihello'"
   echo " We can do:"
-  echo " ./my_ibrun -n 16 -o 0  ./mpihello &"
-  echo " ./my_ibrun -n 16 -o 16 ./mpihello &"
+  echo " ibrun -n 16 -o 0  ./mpihello &"
+  echo " ibrun -n 16 -o 16 ./mpihello &"
   echo " wait"
   echo ""
   echo "The first call launches a 16-processor job on the first 16 hosts in the hostfile,"
@@ -64,7 +64,7 @@ srq_size=2048
 default_time_out=23
   
 # Find out which MPI stack we're using
-MODE=`getmode.sh`
+MODE=`$TACC_IBWRAPPER_BIN/getmode.sh`
 
 # Set our files and directories
 home_sge_dir="$HOME/.sge"
@@ -87,6 +87,24 @@ if [ -f $hostfile_tacc ]; then
   rm $hostfile_tacc
 fi
 
+
+# Set local LD_PRELOAD with DARSHAN
+if [ x$LD_PRELOAD == "x" ]; then
+  IBRUN_LD_PRELOAD=""
+else
+  IBRUN_LD_PRELOAD="$LD_PRELOAD"
+  unset LD_PRELOAD
+fi
+
+if [ x$TACC_DARSHAN_LIB != "x" ]; then
+  if [ x$IBRUN_LD_PRELOAD == "x" ]; then
+    IBRUN_LD_PRELOAD="${TACC_DARSHAN_FORTRAN_LIB}:${TACC_DARSHAN_LIB}"
+  else
+    IBRUN_LD_PRELOAD="${IBRUN_LD_PRELOAD}:${TACC_DARSHAN_FORTRAN_LIB}:${TACC_DARSHAN_LIB}"
+  fi
+  MVAPICH_LD_PRELOAD="LD_PRELOAD=$IBRUN_LD_PRELOAD"
+  OPENMPI_LD_PRELOAD="-x LD_PRELOAD"
+fi
 
 
 # Build hostfile for mvapich2 
@@ -346,7 +364,7 @@ if [ $? -ne 0 ]; then
     fullcmd="$cmd"
 fi
 
-if [ -n "$RTM_IBRUN_DEBUG" ]; then
+if [ -n "$TACC_IBWRAPPER_DEBUG" ]; then
   exit
 fi
 
@@ -382,28 +400,24 @@ if [ x"$MODE" == "xmvapich2_mpd" ]; then
 # Launch a job with mvapich1 and 2+ssh mpirun_rsh command
 elif [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MODE" == "xmvapich2_ssh" ]; then
 
+
     # How sweet is this?  MVAPICH1 AND MVAPICH2 using the same baby.
 
     TACC_ENV=`$TACC_IBWRAPPER_BIN/build_env.pl`
-    $MPICH_HOME/bin/mpirun_rsh -np $MY_NSLOTS -hostfile $hostfile_tacc $TACC_ENV $fullcmd "$@"
+    $MPICH_HOME/bin/mpirun_rsh -np $MY_NSLOTS -hostfile $hostfile_tacc $TACC_ENV $MVAPICH_LD_PRELOAD $fullcmd "$@"
     res=$?
 
 
-
-# This mvapich-devel case could be rolled up into the two cases above...
-elif [ x"$MODE" == "xmvapich1_devel_ssh" ]; then
-    
-    TACC_ENV=`$TACC_IBWRAPPER_BIN/build_env.pl`
-    $MPICH_HOME/bin/mpirun_rsh -np $MY_NSLOTS -hostfile $hostfile_tacc $TACC_ENV $fullcmd "$@"
-    res=$?
-
-
-    
 elif [ x"$MODE" == "xopenmpi_ssh" -o  x"$MODE" == "xopenmpi_1.3_ssh" ]; then
+    if [ -n "$IBRUN_LD_PRELOAD" ]; then
+      export LD_PRELOAD=$IBRUN_LD_PRELOAD
+      OPENMPI_LD_PRELOAD="-x LD_PRELOAD"
+    fi
+
     TACC_ENV=`env | cut -d= -f1 | grep -v '\b_\b' | perl -pe 's/(.*)\n/ -x \1/m'`
     TACC_OPENMPI_OPTIONS="--mca btl sm,openib,self --mca btl_openib_ib_timeout $default_time_out --mca btl_openib_use_srq 1 --mca btl_openib_use_rd_max $srq_size"
 
-    mpirun -np $MY_NSLOTS -hostfile $hostfile_tacc --mca oob_tcp_if_include ib0 $TACC_OPENMPI_OPTIONS --prefix $MPICH_HOME $TACC_ENV $fullcmd "$@"
+    mpirun -np $MY_NSLOTS -hostfile $hostfile_tacc --mca oob_tcp_if_include ib0 $TACC_OPENMPI_OPTIONS --prefix $MPICH_HOME $TACC_ENV $OPENMPI_LD_PRELOAD $fullcmd "$@"
     res=$?
 
 
