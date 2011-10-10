@@ -6,6 +6,7 @@ BIN		:= $(prefix)/bin
 
 DIRLIST		:= $(DESTDIR)$(BIN)
 
+MAINDIR         := configure.ac Makefile.in configure
 STANDALONE_PRGM := bin/build_env.pl  bin/checkExec.in  bin/getmode.sh  bin/ibrun  bin/tacc_affinity bin/tacc_rsh
 VDATE		:= $(shell date +'%F %H:%M')
 
@@ -38,12 +39,14 @@ config.status:
 dist:  
 	$(MAKE) DistD=DIST _dist
 
-_dist: _distMkDir _distBin _distSetup _distReqPkg    \
-       _distMF    _distTar
+_dist: _distMkDir _distMainDir _distBin  _distTar
 
 _distMkDir:
 	$(RM) -r $(DistD)
 	mkdir $(DistD)
+
+_distMainDir:
+	cp $(MAINDIR) $(DistD)
 
 _distBin:
 	mkdir $(DistD)/bin
@@ -82,7 +85,7 @@ clean:
 clobber: clean
 
 distclean: clobber
-	$(RM) makefile config.status
+	$(RM) config.status
 
 gittag:
         ifneq ($(TAG),)
