@@ -103,7 +103,7 @@ if [ x$TACC_DARSHAN_LIB != "x" ]; then
     IBRUN_LD_PRELOAD="${IBRUN_LD_PRELOAD}:${TACC_DARSHAN_FORTRAN_LIB}:${TACC_DARSHAN_LIB}"
   fi
   MVAPICH_LD_PRELOAD="LD_PRELOAD=$IBRUN_LD_PRELOAD"
-  OPENMPI_LD_PRELOAD="-x LD_PRELOAD"
+  OPENMPI_LD_PRELOAD="-x LD_PRELOAD=$IBRUN_LD_PRELOAD"
 fi
 
 
@@ -409,10 +409,6 @@ elif [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MO
 
 
 elif [ x"$MODE" == "xopenmpi_ssh" -o  x"$MODE" == "xopenmpi_1.3_ssh" ]; then
-    if [ -n "$IBRUN_LD_PRELOAD" ]; then
-      export LD_PRELOAD=$IBRUN_LD_PRELOAD
-      OPENMPI_LD_PRELOAD="-x LD_PRELOAD"
-    fi
 
     TACC_ENV=`env | cut -d= -f1 | grep -v '\b_\b' | perl -pe 's/(.*)\n/ -x \1/m'`
     TACC_OPENMPI_OPTIONS="--mca btl sm,openib,self --mca btl_openib_ib_timeout $default_time_out --mca btl_openib_use_srq 1 --mca btl_openib_use_rd_max $srq_size"
