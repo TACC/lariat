@@ -4,18 +4,16 @@
 MODE=`$TACC_IBWRAPPER_BIN/getmode.sh`
 
 # First determine "wayness" of PE
-myway=`/bin/echo $PE | /bin/sed s/way//`
+myway=`builtin echo $PE | /bin/sed s/way//`
 
 # Determine local compute node rank number
 if [ x"$MODE" == "xmvapich2_mpd" ]; then
-# Note, bug in MVAPICH2 uses PMI_RANK rather than MPI_RANK
   export MV2_USE_AFFINITY=0
   export MV2_ENABLE_AFFINITY=0
   my_rank=$PMI_RANK 
 elif [ x"$MODE" == "xmvapich2_ssh" ]; then
   export MV2_USE_AFFINITY=0
   export MV2_ENABLE_AFFINITY=0
-  # my_rank=$MPISPAWN_MPIRUN_RANK_0   (ks: not correct)
   my_rank=$PMI_ID
 elif [ x"$MODE" == "xmvapich1_ssh" ]; then
   export VIADEV_USE_AFFINITY=0
@@ -24,38 +22,71 @@ elif [ x"$MODE" == "xmvapich1_ssh" ]; then
 elif [ x"$MODE" == "xmvapich1_devel_ssh" ]; then
   export VIADEV_USE_AFFINITY=0
   export VIADEV_ENABLE_AFFINITY=0
-  my_rank=$MPIRUN_RANK
-elif [ x"$MODE" == "xopenmpi_1.3_ssh" ]; then
-  my_rank=$OMPI_COMM_WORLD_RANK
-elif [ x"$MODE" == "xopenmpi_ssh" ]; then
-  my_rank=$OMPI_MCA_ns_nds_vpid
 else
   echo "TACC: Could not determine MPI stack. Exiting!"
   exit 1
 fi  
 
+my_rank=$(( ${PMI_RANK-0} + ${PMI_ID-0} + ${MPIRUN_RANK-0} + ${OMPI_COMM_WORLD_RANK-0} + ${OMPI_MCA_ns_nds_vpid-0} ))
+
+########################################################################
+# Figure out which system we are on.
+########################################################################
+nlocal=$(hostname -f)
+nA=($(builtin echo "$nlocal" | tr '.' ' '))
+first=${nA[0]}
+SYSHOST=${nA[1]}
+
+if [ "$first" = spur ]; then
+  SYSHOST=ranger
+fi
+
+
 local_rank=$(( $my_rank % $myway ))
 
-# Based on "wayness" determine socket layout on local node
-# if less than 4-way, offset to skip socket 0
-if [ $myway -eq 1 ]; then
-    numnode="0,1,2,3"
-# if 2-way, set 1st task on 0,1 and second on 2,3
-elif [ $myway -eq 2 ]; then
-    numnode="$(( 2 * $local_rank )),$(( 2 * $local_rank + 1 ))"
-elif [ $myway -lt 4 ]; then
-    numnode=$(( $local_rank + 1 ))
-# if 4-way to 12-way, spread processes equally on sockets
-elif [ $myway -lt 13 ]; then
-    numnode=$(( $local_rank / ( $myway / 4 ) ))
-# if 16-way, spread processes equally on sockets
-elif [ $myway -eq 16 ]; then
-    numnode=$(( $local_rank / ( $myway / 4 ) ))
-# Offset to not use 4 processes on socket 0
+if [ "$SYSHOST" = ranger ]; then
+
+  # Based on "wayness" determine socket layout on local node
+  # if less than 4-way, offset to skip socket 0
+  if [ $myway -eq 1 ]; then
+      numnode="0,1,2,3"
+  # if 2-way, set 1st task on 0,1 and second on 2,3
+  elif [ $myway -eq 2 ]; then
+      numnode="$(( 2 * $local_rank )),$(( 2 * $local_rank + 1 ))"
+  elif [ $myway -lt 4 ]; then
+      numnode=$(( $local_rank + 1 ))
+  # if 4-way to 12-way, spread processes equally on sockets
+  elif [ $myway -lt 13 ]; then
+      numnode=$(( $local_rank / ( $myway / 4 ) ))
+  # if 16-way, spread processes equally on sockets
+  elif [ $myway -eq 16 ]; then
+      numnode=$(( $local_rank / ( $myway / 4 ) ))
+  # Offset to not use 4 processes on socket 0
+  else
+      numnode=$(( ($local_rank + 1) / 4 ))
+  fi
 else
-    numnode=$(( ($local_rank + 1) / 4 ))
+  # Based on "wayness" determine socket layout on local node
+  #   Modified to fit Longhorn  (2 sockets, 4 cores), Lars on Wed Jan 20 13:49:59 CST 2010
+  #   Modified to fit Lonestar4 (2 sockets, 6 cores), Lars on Thu Jan 20 15:39:50 CST 2011
+  if [ $myway -eq 1 ]; then
+      numnode="0,1"
+  elif [ $myway -eq 2 ]; then
+      numnode=$local_rank
+  elif [ $myway -le 4 ]; then
+      numnode=$(( local_rank / 2 ))
+  elif [ $myway -le 6 ]; then
+      numnode=$(( local_rank / 3 ))
+  elif [ $myway -le 8 ]; then
+      numnode=$(( local_rank / 4 ))
+  elif [ $myway -le 10 ]; then
+      numnode=$(( local_rank / 5 ))
+  elif [ $myway -le 12 ]; then
+      numnode=$(( local_rank / 6 ))
+  fi
 fi
 
 #echo "TACC: Running $my_rank on socket $numnode"
 
-exec /usr/bin/numactl -c $numnode -m $numnode $*
+exec numactl --cpunodebind=$numnode --membind=$numnode $*
+
