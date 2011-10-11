@@ -16,7 +16,7 @@ all: $(OBJ) $(EXEC)
 $(OBJ):
 	mkdir -p $(OBJ)
 
-$(OBJ)helloC: helloC.o
+$(OBJ)helloC: $(OBJ)helloC.o
 	$(LINK.C)  -o $@ $<
 
 $(OBJ)helloC.o: helloC.c
