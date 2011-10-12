@@ -6,4 +6,5 @@ OBJ
 config.log
 config.status
 makefile
-
+core.*
+ibrun_t2.o*
