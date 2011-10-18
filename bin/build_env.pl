@@ -1,4 +1,4 @@
-#!/usr/bin/perl 
+#!/usr/bin/perl
 #---------------------------------------------------------
 # Derive the user environment and strip out a 
 # couple of key elements (to pass along to MVAPICH later).
