@@ -19,6 +19,7 @@ if [ $SYSHOST = "ranger" ]; then
   replacement=".${SYSHOST}.tacc.utexas.edu"
 fi
 
+CPN_stampede=16
 CPN_ranger=16
 CPN_ls4=12
 CPN_longhorn=8
@@ -52,15 +53,13 @@ if [ "$1" == "-h" -o "$1" == "--help" -o "$1" == "-help" ]; then
   echo " ibrun -n $CPN -o $CPN ./mpihello &"
   echo " wait"
   echo ""
-  echo "The first call launches a $CPN-processor job on the first $CPN hosts in the hostfile,"
-  echo "The second call launches a $CPN-processor job on the second $CPN hosts in the hostfile."
+  echo "The first call launches a ${CPN}-processor job on the first $CPN hosts in the hostfile,"
+  echo "The second call launches a ${CPN}-processor job on the second $CPN hosts in the hostfile."
   echo "The shell 'wait' command waits for all processes to finish before the shell exits."
   exit 0
 fi
 
 echo "TACC: Starting up job $JOB_ID"
-
-exit
 
 # Get the PE hostfile, number of slots and wayness from the environment
 pe_hostfile=$PE_HOSTFILE
@@ -380,17 +379,41 @@ fi
 
 ## Modify $hostfile_tacc if user passed special options to ibrun
 if [ x"$ibrun_n_option" != "x" ]; then
-  # Create a temporary file for the subset of hosts which we will run on.
-  subhostfile_tacc=`mktemp $home_sge_dir/job.$JOB_ID.subhostlist.XXXXXXXX`
 
-  # Cut the subset of hosts from the orig hostfile and put them in the subhostfile.
-  cat $hostfile_tacc | tail -n $(( $MY_NSLOTS - $ibrun_o_option )) | head -n $ibrun_n_option > $subhostfile_tacc
+  # Handle ssh mvapich 
+  if [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MODE" == "xmvapich2_ssh" ]; then
+    # Create a temporary file for the subset of hosts which we will run on.
+    subhostfile_tacc=`mktemp $home_sge_dir/job.$JOB_ID.subhostlist.XXXXXXXX`
+
+    # Cut the subset of hosts from the orig hostfile and put them in the subhostfile.
+    cat $hostfile_tacc | tail -n $(( $MY_NSLOTS - $ibrun_o_option )) | head -n $ibrun_n_option > $subhostfile_tacc
+
+  # Handle openmpi mpi starter
+  elif [ x"$MODE" == "xopenmpi_ssh" -o x"$MODE" == "xopenmpi_1.3_ssh" ]; then
+    # Create a temporary file for the subset of hosts which we will run on.
+    subhostfile_tacc=`mktemp $home_sge_dir/job.$JOB_ID.subhostlist.XXXXXXXX`
+
+    #Calculate the starting node and ending node
+    s_node=$(( $ibrun_o_option/$pe_ppn ))
+    e_node=$(( ($ibrun_o_option+$ibrun_n_option)/$pe_ppn ))
+    m_nodes=$(( $e_node - $s_node - 1 ))
+
+    #Calculate the # of tasks on starting node and ending node
+    s_tasks=$(( $pe_ppn - ($ibrun_o_option - ($s_node*$pe_ppn)) ))
+    e_tasks=$(( $ibrun_o_option + $ibrun_n_option - ($e_node*$pe_ppn) ))
+    # Cut the subset of hosts from the orig hostfile and put them in the subhostfile.
+
+    #Handle the first node
+    cat $hostfile_tacc | head -n $(( $s_node + 1 )) | tail -1 | sed -e"s/=[0-9]\+$/=${s_tasks}/" >  $subhostfile_tacc
+    #Handle the in between nodes
+    cat $hostfile_tacc | head -n $e_node   | tail -n $m_nodes  >>  $subhostfile_tacc
+    #Handle the last node
+    cat $hostfile_tacc | head -n $(( $e_node + 1 )) | tail -1 | sed -e"s/=[0-9]\+$/=${e_tasks}/" >> $subhostfile_tacc
+
+  fi
 
   # Move the subhostfile in place of the hostfile
-  mv $subhostfile_tacc $hostfile_tacc
-
-  ## Remove me later, debugging purposes only
-  #cat $hostfile_tacc
+  /bin/mv $subhostfile_tacc $hostfile_tacc
 
   ## Set MY_NSLOTS to the number of requested processors so the mpirun commands below
   ## use the right number of CPUs.
@@ -409,11 +432,10 @@ if [ x"$MODE" == "xmvapich2_mpd" ]; then
 # Launch a job with mvapich1 and 2+ssh mpirun_rsh command
 elif [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MODE" == "xmvapich2_ssh" ]; then
 
-
     # How sweet is this?  MVAPICH1 AND MVAPICH2 using the same baby.
 
     TACC_ENV=`$TACC_IBWRAPPER_BIN/build_env.pl`
-    $MPICH_HOME/bin/mpirun_rsh -np $MY_NSLOTS -hostfile $hostfile_tacc $TACC_ENV $MVAPICH_LD_PRELOAD $fullcmd "$@"
+    $MPICH_HOME/bin/mpirun_rsh -np $MY_NSLOTS -hostfile $hostfile_tacc $MY_MPIRUN_OPTIONS $TACC_ENV $MVAPICH_LD_PRELOAD $fullcmd "$@"
     res=$?
 
 
@@ -422,7 +444,7 @@ elif [ x"$MODE" == "xopenmpi_ssh" -o  x"$MODE" == "xopenmpi_1.3_ssh" ]; then
     TACC_ENV=`env | cut -d= -f1 | grep -v '\b_\b' | perl -pe 's/(.*)\n/ -x \1/m'`
     TACC_OPENMPI_OPTIONS="--mca btl sm,openib,self --mca btl_openib_ib_timeout $default_time_out --mca btl_openib_use_srq 1 --mca btl_openib_use_rd_max $srq_size"
 
-    mpirun -np $MY_NSLOTS -hostfile $hostfile_tacc --mca oob_tcp_if_include ib0 $TACC_OPENMPI_OPTIONS --prefix $MPICH_HOME $TACC_ENV $OPENMPI_LD_PRELOAD $fullcmd "$@"
+    mpirun -np $MY_NSLOTS -hostfile $hostfile_tacc --mca oob_tcp_if_include ib0 $TACC_OPENMPI_OPTIONS $MY_OPENMPI_OPTIONS --prefix $MPICH_HOME $TACC_ENV $OPENMPI_LD_PRELOAD $fullcmd "$@"
     res=$?
 
 
