@@ -1,6 +1,38 @@
 #!/bin/bash
 # -*- shell-script -*-
  
+########################################################################
+# Figure out which system we are on.
+########################################################################
+nlocal=$(hostname -f)
+nA=($(builtin echo "$nlocal" | tr '.' ' '))
+first=${nA[0]}
+SYSHOST=${nA[1]}
+
+if [ "$first" = spur ]; then
+  SYSHOST=ranger
+fi
+
+fqdn="$SYSHOST.tacc.utexas.edu"
+
+if [ $SYSHOST = "ranger" ]; then
+  replacement=".${SYSHOST}.tacc.utexas.edu"
+fi
+
+CPN_ranger=16
+CPN_ls4=12
+CPN_longhorn=8
+
+eval "CPN=\$CPN_$SYSHOST"
+
+NUMCORES=$((CPN*2))
+
+echo CPN: $CPN
+echo NUMCORES: $NUMCORES
+
+exit
+
+
 ## Look through all the arguments to ibrun.  If the user asked for help (-h)
 ## print the help and then exit immediately.
 if [ "$1" == "-h" -o "$1" == "--help" -o "$1" == "-help" ]; then
@@ -34,23 +66,6 @@ fi
 
 echo "TACC: Starting up job $JOB_ID"
 
-########################################################################
-# Figure out which system we are on.
-########################################################################
-nlocal=$(hostname -f)
-nA=($(builtin echo "$nlocal" | tr '.' ' '))
-first=${nA[0]}
-SYSHOST=${nA[1]}
-
-if [ "$first" = spur ]; then
-  SYSHOST=ranger
-fi
-
-fqdn="$SYSHOST.tacc.utexas.edu"
-
-if [ $SYSHOST = "ranger" ]; then
-  replacement=".${SYSHOST}.tacc.utexas.edu"
-fi
 
 
 # Get the PE hostfile, number of slots and wayness from the environment
