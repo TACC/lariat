@@ -27,12 +27,6 @@ eval "CPN=\$CPN_$SYSHOST"
 
 NUMCORES=$((CPN*2))
 
-echo CPN: $CPN
-echo NUMCORES: $NUMCORES
-
-exit
-
-
 ## Look through all the arguments to ibrun.  If the user asked for help (-h)
 ## print the help and then exit immediately.
 if [ "$1" == "-h" -o "$1" == "--help" -o "$1" == "-help" ]; then
@@ -52,21 +46,21 @@ if [ "$1" == "-h" -o "$1" == "--help" -o "$1" == "-help" ]; then
   echo "of processors to start numbering.  This allows you to e.g. launch two different"
   echo "exectuables on two different subsets of the available hosts."
   echo ""
-  echo "Example, parallel environment -pe 16way 32, executable 'mpihello'"
+  echo "Example, parallel environment -pe ${CPN}way $NUMCORES, executable 'mpihello'"
   echo " We can do:"
-  echo " ibrun -n 16 -o 0  ./mpihello &"
-  echo " ibrun -n 16 -o 16 ./mpihello &"
+  echo " ibrun -n $CPN -o 0  ./mpihello &"
+  echo " ibrun -n $CPN -o $CPN ./mpihello &"
   echo " wait"
   echo ""
-  echo "The first call launches a 16-processor job on the first 16 hosts in the hostfile,"
-  echo "The second call launches a 16-processor job on the second 16 hosts in the hostfile."
+  echo "The first call launches a $CPN-processor job on the first $CPN hosts in the hostfile,"
+  echo "The second call launches a $CPN-processor job on the second $CPN hosts in the hostfile."
   echo "The shell 'wait' command waits for all processes to finish before the shell exits."
   exit 0
 fi
 
 echo "TACC: Starting up job $JOB_ID"
 
-
+exit
 
 # Get the PE hostfile, number of slots and wayness from the environment
 pe_hostfile=$PE_HOSTFILE
