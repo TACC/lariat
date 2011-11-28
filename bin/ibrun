@@ -362,6 +362,10 @@ if [ $res -ne 0 ]; then
 fi
 
 
+if [ -n "$LMOD_CMD" ]; then
+  export LMOD_CMD=$LMOD_CMD
+fi
+
 checkExec $cmd "$@"
 
 # Double check the executable name specified to ibrun

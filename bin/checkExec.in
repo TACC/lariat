@@ -43,7 +43,9 @@ end
 
 
 function findEnvVersions(mpiStack, compiler)
+   local sysT = {mpi="unknown",comp="unknown"}
    local lmod_cmd = getenv("LMOD_CMD")
+   if (lmod_cmd == nil) then return sysT end
    local s        = capture(lmod_cmd .. " bash tablelist 2>&1 ")
 
    local a = {}
@@ -63,7 +65,6 @@ function findEnvVersions(mpiStack, compiler)
    s = concatTbl(a,"\n")
    assert(loadstring(s))()
 
-   local sysT = {mpi="unknown",comp="unknown"}
    local scv  = canonicalCompilerVersion(activeList[compiler])
    sysT.mpi  = mpiStack .."-"..tostring(activeList[mpiStack])
    sysT.comp = compiler .."-"..scv
@@ -175,14 +176,16 @@ function main()
    local mpiStack = getenv("TACC_FAMILY_MPI")      or "unknown"
    local compiler = getenv("TACC_FAMILY_COMPILER") or "unknown"
    local sysT     = findEnvVersions(mpiStack, compiler)
-
+   local status = 0
+   if (sysT.mpi == "unknown") then
+      return status
+   end
 
    if (dbg > 0) then
       print("sysT:    ",sysT.mpi, sysT.comp)
    end
 
    local execT = matchExecWmodules(ldd)
-   local status = 0
 
    if (execT == nil) then
       if (dbg > 0) then
