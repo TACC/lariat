@@ -250,6 +250,11 @@ stop_parsing=0
 while [ $stop_parsing -ne 1 ]
 do
   case "$1" in
+    -np)
+      shift
+      MY_NSLOTS=$1
+      shift
+      ;;
     -n)
       ## This is how many hosts to use from the main hostfile.
       ## Can be as many as $MY_NSLOTS.
