@@ -1,0 +1,19 @@
+#!/bin/bash
+# -*- shell-script -*-
+
+. ./.build
+
+. $BUILD_SRC/functions.sh
+
+SET_BASE_DIR
+pkgName=ibwrapper
+
+PKG=$BASE_DIR/$pkgName/$PKG_VERSION
+
+cmdA=( "rm -rf $PKG"
+       "./configure --prefix=$PKG"
+       "make install"
+      )
+
+
+runMe "${cmdA[@]}"
