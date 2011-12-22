@@ -1,7 +1,7 @@
 # $Id: Makefile.in 701 2011-02-08 22:27:13Z mclay $
 PATH_TO_LUA	:= @PATH_TO_LUA@
 prefix		:= @prefix@
-version		:= 1.1
+version		:= 1.3
 BIN		:= $(prefix)/bin
 
 DIRLIST		:= $(DESTDIR)$(BIN)
@@ -53,7 +53,7 @@ _distBin:
 	cp $(STANDALONE_PRGM) $(DistD)/bin
 
 _distTar:
-	echo "ibrun"-$(version) > .fname;                		   \
+	echo "ibwrapper"-$(version) > .fname;                		   \
 	$(RM) -r `cat .fname` `cat .fname`.tar*;         		   \
 	mv ${DistD} `cat .fname`;                            		   \
 	tar chf `cat .fname`.tar `cat .fname`;           		   \
@@ -62,9 +62,9 @@ _distTar:
 
 
 tags:
-	find . \( -regex '.*~$$\|.*/\.svn$$\|.*/\.svn/' -prune \)  \
+	find . \( -regex '.*~$$\|.*/\.git\|.*/\.git/' -prune \)    \
                -o -type f > file_list.1
-	sed -e 's|.*/.svn.*||g'                                    \
+	sed -e 's|.*/.git.*||g'                                    \
             -e 's|.*/rt/.*/t1/.*||g'                               \
             -e 's|./TAGS||g'                                       \
             -e 's|./configure$$||g'                                \
