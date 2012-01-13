@@ -13,8 +13,10 @@ VDATE		:= $(shell date +'%F %H:%M')
 REQUIRED_PKGS   :=                \
 	           capture        \
 	           fileOps        \
+	           lfs            \
 	           strict         \
 	           string_split   \
+	           string_trim    \
 
 
 all:
