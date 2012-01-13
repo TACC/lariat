@@ -37,7 +37,7 @@ __installMe:
 PKGS:   srcPkgs requiredPkgs
 
 srcPkgs: $(wildcard src/*.lua)
-	cp $^ $(DESTDIR)$(BIN)
+	if [ -n "$^" ]; then cp $^ $(DESTDIR)$(BIN); fi
 
 requiredPkgs:
 	cp `findLuaPkg $(REQUIRED_PKGS)` $(DESTDIR)$(BIN)
