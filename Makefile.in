@@ -10,10 +10,16 @@ MAINDIR         := configure.ac Makefile.in configure
 STANDALONE_PRGM := bin/build_env.pl  bin/checkExec.in  bin/getmode.sh  bin/ibrun  bin/tacc_affinity bin/tacc_rsh
 VDATE		:= $(shell date +'%F %H:%M')
 
+REQUIRED_PKGS   := \
+	           capture
+	           fileOps
+	           strict
+	           string_split
+
 all:
 	@echo done
 
-install: $(DIRLIST) PRGMS
+install: $(DIRLIST) PRGMS PKGS
 
 $(DIRLIST) :
 	mkdir -p $@
@@ -27,6 +33,14 @@ __installMe:
           [ -n "$(DIRLOC)" ] && mv $$fn $(DESTDIR)$(DIRLOC) && chmod +x $(DESTDIR)$(DIRLOC)/$$fn; \
         done
 
+PKGS:   srcPkgs requiredPkgs
+
+srcPkgs: src/*.lua
+	cp $^ $(DESTDIR)$(BIN)
+
+requiredPkgs:
+	cp `findLuaPkg $(REQUIRED_PKGS)` $(DESTDIR)$(BIN)
+
 PRGMS: $(STANDALONE_PRGM)
 	$(MAKE) FILELIST="$^" DIRLOC=$(BIN)    __installMe
 
@@ -39,7 +53,7 @@ config.status:
 dist:  
 	$(MAKE) DistD=DIST _dist
 
-_dist: _distMkDir _distMainDir _distBin  _distTar
+_dist: _distMkDir _distMainDir _distBin  _distReqPkg _distTar
 
 _distMkDir:
 	$(RM) -r $(DistD)
@@ -48,6 +62,8 @@ _distMkDir:
 _distMainDir:
 	cp $(MAINDIR) $(DistD)
 
+_distReqPkg:
+	cp `findLuaPkg $(REQUIRED_PKGS)` $(DistD)/src
 _distBin:
 	mkdir $(DistD)/bin
 	cp $(STANDALONE_PRGM) $(DistD)/bin
