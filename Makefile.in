@@ -36,7 +36,7 @@ __installMe:
 
 PKGS:   srcPkgs requiredPkgs
 
-srcPkgs: src/*.lua
+srcPkgs: $(wildcard src/*.lua)
 	cp $^ $(DESTDIR)$(BIN)
 
 requiredPkgs:
