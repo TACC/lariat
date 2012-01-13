@@ -10,11 +10,12 @@ MAINDIR         := configure.ac Makefile.in configure
 STANDALONE_PRGM := bin/build_env.pl  bin/checkExec.in  bin/getmode.sh  bin/ibrun  bin/tacc_affinity bin/tacc_rsh
 VDATE		:= $(shell date +'%F %H:%M')
 
-REQUIRED_PKGS   := \
-	           capture
-	           fileOps
-	           strict
-	           string_split
+REQUIRED_PKGS   :=                \
+	           capture        \
+	           fileOps        \
+	           strict         \
+	           string_split   \
+
 
 all:
 	@echo done
