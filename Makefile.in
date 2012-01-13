@@ -40,7 +40,7 @@ srcPkgs: $(wildcard src/*.lua)
 	if [ -n "$^" ]; then cp $^ $(DESTDIR)$(BIN); fi
 
 requiredPkgs:
-	cp `findLuaPkg $(REQUIRED_PKGS)` $(DESTDIR)$(BIN)
+	cp `findLuaPkgs $(REQUIRED_PKGS)` $(DESTDIR)$(BIN)
 
 PRGMS: $(STANDALONE_PRGM)
 	$(MAKE) FILELIST="$^" DIRLOC=$(BIN)    __installMe
@@ -64,7 +64,7 @@ _distMainDir:
 	cp $(MAINDIR) $(DistD)
 
 _distReqPkg:
-	cp `findLuaPkg $(REQUIRED_PKGS)` $(DistD)/src
+	cp `findLuaPkgs $(REQUIRED_PKGS)` $(DistD)/src
 _distBin:
 	mkdir $(DistD)/bin
 	cp $(STANDALONE_PRGM) $(DistD)/bin
