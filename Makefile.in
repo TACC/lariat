@@ -33,7 +33,7 @@ __installMe:
           sed -e 's|@PREFIX@|@prefix@|g'                          \
 	      -e 's|@path_to_lua@|$(PATH_TO_LUA)|g'               \
               -e 's|@PKG@|$(PKG)|g'         < $$i > $$fn;         \
-          [ -n "$(DIRLOC)" ] && mv $$fn $(DESTDIR)$(DIRLOC) && chmod +x $(DESTDIR)$(DIRLOC)/$$fn; \
+          [ -n "$(DESTDIR)$$(DIRLOC)" ] && mv $$fn $(DESTDIR)$(DIRLOC) && chmod +x $(DESTDIR)$(DIRLOC)/$$fn; \
         done
 
 PKGS:   srcPkgs requiredPkgs
@@ -60,12 +60,13 @@ _dist: _distMkDir _distMainDir _distBin  _distReqPkg _distTar
 
 _distMkDir:
 	$(RM) -r $(DistD)
-	mkdir $(DistD)
+	mkdir -p $(DistD)
 
 _distMainDir:
 	cp $(MAINDIR) $(DistD)
 
 _distReqPkg:
+	mkdir $(DistD)/src
 	cp `findLuaPkgs $(REQUIRED_PKGS)` $(DistD)/src
 _distBin:
 	mkdir $(DistD)/bin
