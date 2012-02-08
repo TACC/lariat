@@ -1,7 +1,7 @@
 # $Id: Makefile.in 701 2011-02-08 22:27:13Z mclay $
 PATH_TO_LUA	:= @PATH_TO_LUA@
 prefix		:= @prefix@
-version		:= 1.3
+version		:= 1.4
 BIN		:= $(prefix)/bin
 
 DIRLIST		:= $(DESTDIR)$(BIN)
@@ -13,10 +13,11 @@ VDATE		:= $(shell date +'%F %H:%M')
 REQUIRED_PKGS   :=                \
 	           capture        \
 	           fileOps        \
-	           lfs            \
 	           strict         \
 	           string_split   \
 	           string_trim    \
+
+REQUIRED        := $(patsubst %, src/%.lua, $(REQUIRED_PKGS))
 
 
 all:
@@ -33,16 +34,22 @@ __installMe:
           sed -e 's|@PREFIX@|@prefix@|g'                          \
 	      -e 's|@path_to_lua@|$(PATH_TO_LUA)|g'               \
               -e 's|@PKG@|$(PKG)|g'         < $$i > $$fn;         \
-          [ -n "$(DESTDIR)$$(DIRLOC)" ] && mv $$fn $(DESTDIR)$(DIRLOC) && chmod +x $(DESTDIR)$(DIRLOC)/$$fn; \
+          [ -n "$(DESTDIR)$(DIRLOC)" ] && mv $$fn $(DESTDIR)$(DIRLOC) && chmod +x $(DESTDIR)$(DIRLOC)/$$fn; \
         done
 
-PKGS:   srcPkgs requiredPkgs
+PKGS:   $(REQUIRED)
 
-srcPkgs: $(wildcard src/*.lua)
-	if [ -n "$^" ]; then cp $^ $(DESTDIR)$(BIN); fi
+srcPkgs: 
+	if [ -n "$^" ]; then cp $^ 
 
-requiredPkgs:
-	cp `findLuaPkgs $(REQUIRED_PKGS)` $(DESTDIR)$(BIN)
+$(REQUIRED):
+	if [ -f $@ ]; then                                              \
+          cp $@ $(DESTDIR)$(BIN);                                       \
+        else                                                            \
+	  f=`echo "$(notdir $@)" | sed -e 's/\.lua//'`;                 \
+          echo f: $$f;                                                  \
+          cp `findLuaPkgs $$f` $(DESTDIR)$(BIN);                        \
+        fi
 
 PRGMS: $(STANDALONE_PRGM)
 	$(MAKE) FILELIST="$^" DIRLOC=$(BIN)    __installMe
