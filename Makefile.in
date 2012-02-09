@@ -17,7 +17,7 @@ REQUIRED_PKGS   :=                \
 	           string_split   \
 	           string_trim    \
 
-REQUIRED        := $(patsubst %, src/%.lua, $(REQUIRED_PKGS))
+REQUIRED        := $(patsubst %, $(DESTDIR)$(BIN)/%.lua, $(REQUIRED_PKGS))
 
 
 all:
@@ -43,8 +43,8 @@ srcPkgs:
 	if [ -n "$^" ]; then cp $^ 
 
 $(REQUIRED):
-	if [ -f $@ ]; then                                              \
-          cp $@ $(DESTDIR)$(BIN);                                       \
+	if [ -f src/$(notdir $@) ]; then                                \
+          cp src/$(notdir $@) $(DESTDIR)$(BIN);                         \
         else                                                            \
 	  f=`echo "$(notdir $@)" | sed -e 's/\.lua//'`;                 \
           echo f: $$f;                                                  \
