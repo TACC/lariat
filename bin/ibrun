@@ -65,6 +65,10 @@ echo "TACC: Starting up job $JOB_ID"
 pe_hostfile=$PE_HOSTFILE
 pe_slots=$NSLOTS
 
+pe_startTime=`date +%s`
+
+pe_numCores=`wc -l $PE_HOSTFILE`
+
 # Cut out the "way" string and just get the wayness number.
 pe_ppn=`echo $PE | sed -e 's/way//g;'`
 
@@ -460,9 +464,15 @@ else
 fi
 
 
+pe_endTime=`date +%s`
+pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
+
+parseLDD --numCores $pe_numCores --start $pe_startTime --runTime $pe_runTime --jobID $JOB_ID --USER $user $fullcmd $home_sge_dir/job.$JOB_ID.lua
+
 if [ $res -ne 0 ]; then
   echo "TACC: MPI job exited with code: $res"
 fi
+
 
 
 
