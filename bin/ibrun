@@ -19,6 +19,10 @@ if [ $SYSHOST = "ranger" ]; then
   replacement=".${SYSHOST}.tacc.utexas.edu"
 fi
 
+ADMIN_stampede="/fixMe/fixMe"
+ADMIN_ranger="/share/tacc_admin/reverseMapD"
+ADMIN_ls4="/home1/tacc_admin/reverseMapD"
+ADMIN_longhorn="/share/tacc_admin/reverseMapD"
 CPN_stampede=16
 CPN_ranger=16
 CPN_ls4=12
@@ -33,14 +37,14 @@ NUMCORES=$((CPN*2))
 if [ "$1" == "-h" -o "$1" == "--help" -o "$1" == "-help" ]; then
   ## User asked for a help message.  Exit after printing it.
   echo "Basic Usage: "
-  echo "ibrun ./executable <execuable_opions>"
+  echo "$0 ./executable <execuable_opions>"
   echo ""
   echo "In normal usage, pass only the MPI executable name and any"
   echo "options the executable requires."
   echo ""
   echo ""
   echo "Advanced Usage:"
-  echo "ibrun -n <number of processors> -o <offset into processor hostlist> executable <execuable_opions>"
+  echo "$0 -n <number of processors> -o <offset into processor hostlist> executable <execuable_opions>"
   echo ""
   echo "In this case you can specify a subset of processors from the"
   echo "list of all hosts on which to run the executable, and an offset into the list"
@@ -49,8 +53,8 @@ if [ "$1" == "-h" -o "$1" == "--help" -o "$1" == "-help" ]; then
   echo ""
   echo "Example, parallel environment -pe ${CPN}way $NUMCORES, executable 'mpihello'"
   echo " We can do:"
-  echo " ibrun -n $CPN -o 0  ./mpihello &"
-  echo " ibrun -n $CPN -o $CPN ./mpihello &"
+  echo " $0 -n $CPN -o 0  ./mpihello &"
+  echo " $0 -n $CPN -o $CPN ./mpihello &"
   echo " wait"
   echo ""
   echo "The first call launches a ${CPN}-processor job on the first $CPN hosts in the hostfile,"
@@ -67,7 +71,7 @@ pe_slots=$NSLOTS
 
 pe_startTime=`date +%s`
 
-pe_numCores=`wc -l $PE_HOSTFILE`
+pe_numNodes=`wc -l $PE_HOSTFILE`
 
 # Cut out the "way" string and just get the wayness number.
 pe_ppn=`echo $PE | sed -e 's/way//g;'`
@@ -467,7 +471,10 @@ fi
 pe_endTime=`date +%s`
 pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
 
-parseLDD --numCores $pe_numCores --start $pe_startTime --runTime $pe_runTime --jobID $JOB_ID --USER $user $fullcmd $home_sge_dir/job.$JOB_ID.lua
+pe_fn=`mktemp $home_sge_dir/job.$JOB_ID.usage.XXXXXXXX.lua`
+eval "pe_mapD=\$ADMIN_$SYSHOST"
+
+parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn $fullcmd "$@"
 
 if [ $res -ne 0 ]; then
   echo "TACC: MPI job exited with code: $res"

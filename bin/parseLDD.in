@@ -1,0 +1,177 @@
+#!@path_to_lua@/lua
+-- -*- lua -*-
+require("strict")
+
+require("capture")
+require("fileOps")
+require("serializeTbl")
+require("string_split")
+require("VarDump")
+local Dbg       = require("Dbg")
+local Optiks    = require("Optiks")
+local master    = {}
+local getenv    = os.getenv
+local concatTbl = table.concat
+
+ignoreT = {
+   tacc_affinity     = 1,
+   getmode_affinity  = 1,
+}
+
+reverseMapT = {}
+
+DirKeepPass1 = {
+   "^/opt/apps/",
+   "^/share1/apps",
+   "^/work/00515/mclay/apps",
+}
+   
+
+function inPkg(lib, pkgT)
+
+   for k = 1,#PkgListT do
+      local entry = PkgListT[k]
+      for kk = 1, #entry.pathA do
+         if (lib:find(entry.pathA[kk],1,true)) then
+            pkgT[entry.pkg] = entry.flavor
+            break
+         end
+      end
+   end
+end
+
+function masterTbl()
+   return master
+end
+
+function main()
+
+   options()
+   local masterTbl  = masterTbl()
+   local pargs      = masterTbl.pargs
+   local cmd        = "unknown"
+
+   -- open reverseMap file and read it in.
+
+   local reverseMapFn = pathJoin(masterTbl.reverseMapD,"reverseMapT.lua")
+   local rmF          = io.open(reverseMapFn,"r")
+   if (not rmF) then
+      reverseMapFn = pathJoin(masterTbl.reverseMapD,"reverseMapT.old.lua")
+      rmF          = io.open(reverseMapFn,"r")
+   end
+   local whole  = rmF.read("*all")
+   rmF.close()
+
+   assert(loadstring(whole))()
+
+
+   -- find user command from command line.
+
+   for i in 1, #pargs do
+      if (not ignoreT[pargs[i]]) then
+         cmd = pargs[i]
+         break
+      end
+   end
+   local path=getenv("PATH") or ""
+   local execPath = findInPath(cmd,path)
+   
+   -- Determine if an executable or shell script
+   local ldd = capture("ldd "..execPath)
+   local userT = {}
+   userT.execType = "user:binary"
+   if (ldd:find("not a dynamic executable")) then
+      userT.execType = "user:script"
+   else
+      local pkg = reverseMapT[dirname(execPath)]
+      if (pkg) then
+         userT.execType = "system:" .. pkg.pkg
+      end
+   end
+
+   -- Add command line options to userT
+   userT.numCores = getenv(NSLOTS)
+   userT.numNodes = getenv(NHOSTS)
+   userT.account  = getenv(SGE_ACCOUNT)
+   userT.jobID    = getenv(JOB_ID)
+
+
+   local pkgT     = {}
+   local libPathA = {}
+   for l in ldd:split("\n") do
+      l = l:gsub(".*=> *","")
+      l = l:gsub("%(0x.*$","")
+      for d = 1, #DirKeepPass1 do
+         if (l:find(DirKeepPass1[d]) == 1) then
+            libPathA[#libPathA+1] = dirname(l)
+            break;
+         end
+      end
+   end
+
+   for i = 1, #libPathA do
+      local pkg = reverseMapT[libPathA[i]]
+      if (pkg) then
+         pkgT[#pkgT+1] = {pkg.pkg, pkg.flavor}
+      end
+   end
+
+   local s = serializeTbl{indent=true, name=userT, value=userT}
+   local f = io.open(masterTbl.resultFn,"w")
+   if (f) then
+      f:write(s)
+      f:close()
+   end
+end
+
+function options()
+   local masterTbl = masterTbl()
+   local usage         = "Usage: moduleSymlink [options] pkgName pkgVersion"
+   local cmdlineParser = Optiks:new{usage=usage, version=Version}
+
+   cmdlineParser:add_option{ 
+      name   = {'-v','--verbose'},
+      dest   = 'verbosityLevel',
+      action = 'count',
+   }
+
+   cmdlineParser:add_option{ 
+      name   = {'-s','--start'},
+      dest   = 'startTime',
+      action = 'store',
+      help   = "epoch time for job start",
+   }
+
+   cmdlineParser:add_option{ 
+      name   = {'-r','--runTime'},
+      dest   = 'runTime',
+      action = 'store',
+      help   = "job time in seconds",
+   }
+
+   cmdlineParser:add_option{ 
+      name   = {'-f','--fn'},
+      dest   = 'resultFn',
+      action = 'store',
+      help   = "result File Name",
+   }
+
+   cmdlineParser:add_option{ 
+      name   = {'-m','--reverseMap', '--map'},
+      dest   = 'reverseMapD',
+      action = 'store',
+      help   = "reverseMap directory",
+   }
+
+  
+
+
+   local optionTbl, pargs = cmdlineParser:parse(arg)
+
+   for v in pairs(optionTbl) do
+      masterTbl[v] = optionTbl[v]
+   end
+   masterTbl.pargs = pargs
+
+end
+main()
