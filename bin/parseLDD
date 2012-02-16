@@ -1,0 +1,106 @@
+#!/usr/bin/env lua
+-- -*- lua -*-
+require("strict")
+require("string_split")
+require("VarDump")
+
+
+
+DirKeepPass1 = {
+   "^/opt/apps/",
+   "^/share1/apps",
+   "^/work/00515/mclay/apps",
+}
+   
+PkgListT = {
+   { pkg="mkl/10.3",   pathA = {"/opt/apps/intel/11.1/mkl/lib/em64t",}, flavor="core"},
+   { pkg="hdf5/1.8.8", pathA = {
+        "/work/00515/mclay/apps/intel-11_1/mvapich2-1_8/phdf5/1.8.8/lib/",
+        "/work/00515/mclay/apps/intel-11_1/mvapich2-1_8/phdf5/1.8.8/lib/rtm",
+                               },
+     flavor="intel-11_1/mvapich2-1_8"},
+   { pkg="szip/2.1",   pathA = {"/work/00515/mclay/apps/szip/2.1/lib/",}, flavor="core"},
+}
+
+
+
+ldd=[[
+ibimf.so => /opt/apps/intel/11.1/lib/intel64/libimf.so (0x00002b824ce70000)
+libmkl_intel_lp64.so => /libmkl_intel_lp64.so (0x00002b824d204000)
+libmkl_sequential.so => /opt/apps/intel/11.1/mkl/lib/em64t/libmkl_sequential.so (0x00002b824d705000)
+libmkl_core.so => /opt/apps/intel/11.1/mkl/lib/em64t/libmkl_core.so (0x00002b824e03b000)
+libiomp5.so => /opt/apps/intel/11.1/lib/intel64/libiomp5.so (0x00002b824e4f8000)
+libpthread.so.0 => /lib64/libpthread.so.0 (0x00000034fbc00000)
+libhdf5.so.7 => /work/00515/mclay/apps/intel-11_1/mvapich2-1_8/phdf5/1.8.8/lib/libhdf5.so.7 (0x00002b824e6e9000)
+libhdf5_rtm.so.7 => /work/00515/mclay/apps/intel-11_1/mvapich2-1_8/phdf5/1.8.8/lib/rtm/libhdf5.so.7 (0x00002b824e6e9000)
+libz.so.1 => /usr/lib64/libz.so.1 (0x00000034fc000000)
+libmpichf90.so.3 => /work/00515/mclay/apps/intel-11_1/mvapich2/1.8/lib/libmpichf90.so.3 (0x00002b824ec4e000)
+libmpich.so.3 => /work/00515/mclay/apps/intel-11_1/mvapich2/1.8/lib/libmpich.so.3 (0x00002b824ee51000)
+libopa.so.1 => /work/00515/mclay/apps/intel-11_1/mvapich2/1.8/lib/libopa.so.1 (0x00002b824f311000)
+libmpl.so.1 => /work/00515/mclay/apps/intel-11_1/mvapich2/1.8/lib/libmpl.so.1 (0x00002b824f512000)
+liblimic2.so.0 => /opt/apps/limic2/0.5.4//lib/liblimic2.so.0 (0x00002b824f717000)
+librdmacm.so.1 => /opt/ofed/lib64/librdmacm.so.1 (0x00002b824f918000)
+libibverbs.so.1 => /opt/ofed/lib64/libibverbs.so.1 (0x00002b824fb1f000)
+libibumad.so.3 => /opt/ofed/lib64/libibumad.so.3 (0x00002b824fd2e000)
+libdl.so.2 => /lib64/libdl.so.2 (0x00000034fb400000)
+librt.so.1 => /lib64/librt.so.1 (0x00000034fcc00000)
+libifport.so.5 => /opt/apps/intel/11.1/lib/intel64/libifport.so.5 (0x00002b824ff35000)
+libifcore.so.5 => /opt/apps/intel/11.1/lib/intel64/libifcore.so.5 (0x00002b825006e000)
+libsvml.so => /opt/apps/intel/11.1/lib/intel64/libsvml.so (0x00002b82502e5000)
+libm.so.6 => /lib64/libm.so.6 (0x00000034fb800000)
+libirc.so => /opt/apps/intel/11.1/lib/intel64/libirc.so (0x00002b82504fc000)
+libmpichcxx.so.3 => /work/00515/mclay/apps/intel-11_1/mvapich2/1.8/lib/libmpichcxx.so.3 (0x00002b825063a000)
+libstdc++.so.6 => /usr/lib64/libstdc++.so.6 (0x0000003500800000)
+libgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x00000034fd400000)
+libc.so.6 => /lib64/libc.so.6 (0x00000034fb000000)
+/lib64/ld-linux-x86-64.so.2 (0x00000034fac00000)
+libsz.so.2 => /work/00515/mclay/apps/szip/2.1/lib/libsz.so.2 (0x00002b825085f000)
+libintlc.so.5 => /opt/apps/intel/11.1/lib/intel64/libintlc.so.5 (0x00002b8250a72000)
+]]             
+
+function inPkg(lib, pkgT)
+
+   for k = 1,#PkgListT do
+      local entry = PkgListT[k]
+      for kk = 1, #entry.pathA do
+         if (lib:find(entry.pathA[kk],1,true)) then
+            pkgT[entry.pkg] = entry.flavor
+            break
+         end
+      end
+   end
+end
+
+
+
+
+
+local Dbg = require("Dbg")
+function main()
+
+   local pkgT     = {}
+   local libPathA = {}
+   for l in ldd:split("\n") do
+      l = l:gsub(".*=> *","")
+      l = l:gsub("%(0x.*$","")
+      for d = 1, #DirKeepPass1 do
+         if (l:find(DirKeepPass1[d]) == 1) then
+            libPathA[#libPathA+1] = l
+            break;
+         end
+      end
+   end
+
+   
+
+   for i = 1, #libPathA do
+      local l = libPathA[i]
+      inPkg(l, pkgT)
+   end
+
+   for k,v in pairs(pkgT) do
+      print ( k, v)
+   end
+end
+
+main()
