@@ -28,6 +28,23 @@ DirKeepPass1 = {
 }
    
 
+IgnoreModA = {
+   "^intel/",
+   "^gcc/",
+   "^mvapich/",
+   "^mvapich2/",
+   "^openmpi/",
+}   
+
+function keepModule(mod)
+   for i = 1, #IgnoreModA do
+      if (mod:find(IgnoreModA[i])) then
+         return false
+      end
+   end
+   return true
+end
+
 function regularize(value)
    value = value:gsub("//+","/")
    value = value:gsub("/%./","/")
@@ -109,7 +126,7 @@ function main()
 
    for i = 1, #libPathA do
       local pkg = reverseMapT[libPathA[i]]
-      if (pkg) then
+      if (pkg and keepModule(pkg)) then
          pkgT[pkg.pkg] = pkg.flavor
       end
    end
