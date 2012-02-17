@@ -74,8 +74,11 @@ function main()
          break
       end
    end
-   local path=getenv("PATH") or ""
+   local path     = getenv("PATH") or ""
    local execPath = findInPath(cmd,path)
+
+   print (cmd, execPath)
+
    
    -- Determine if an executable or shell script
    local ldd = capture("ldd "..execPath)
