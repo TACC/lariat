@@ -129,8 +129,8 @@ function main()
       local pkg = reverseMapT[regularize(dir)]
       if (pkg and keepModule(pkg.pkg)) then
          local t       = pkgT[pkg.pkg] or {}
+         local libA    = t.libA or {}
          t.flavor      = pkg.flavor
-         libA          = t.libA or {}
          libA[#libA+1] = lib
          t.libA        = libA
          pkgT[pkg.pkg] = t
