@@ -68,7 +68,7 @@ function main()
 
    -- find user command from command line.
 
-   for i in 1, #pargs do
+   for i = 1, #pargs do
       if (not ignoreT[pargs[i]]) then
          cmd = pargs[i]
          break
