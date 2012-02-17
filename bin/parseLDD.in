@@ -28,17 +28,28 @@ DirKeepPass1 = {
 }
    
 
-function inPkg(lib, pkgT)
+function findInPath(exec, path)
+   local result  = ""
 
-   for k = 1,#PkgListT do
-      local entry = PkgListT[k]
-      for kk = 1, #entry.pathA do
-         if (lib:find(entry.pathA[kk],1,true)) then
-            pkgT[entry.pkg] = entry.flavor
-            break
-         end
+   if ( exec == nil) then return result end
+
+   if (exec:sub(1,1) == "/") then
+      if (posix.access(exec,"x")) then
+         print ("exec: ",exec)
+         return exec
       end
    end
+
+   path    = path or os.getenv("PATH")
+   for dir in path:split(":") do
+      local cmd = pathJoin(dir, exec)
+      print (cmd)
+      if (posix.access(cmd,"x")) then
+         result = cmd
+         break
+      end
+   end
+   return result
 end
 
 function masterTbl()
