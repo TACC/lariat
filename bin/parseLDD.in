@@ -9,6 +9,7 @@ require("string_split")
 require("VarDump")
 local Dbg       = require("Dbg")
 local Optiks    = require("Optiks")
+local Version   = "1.4"
 local master    = {}
 local getenv    = os.getenv
 local concatTbl = table.concat
@@ -59,8 +60,8 @@ function main()
       reverseMapFn = pathJoin(masterTbl.reverseMapD,"reverseMapT.old.lua")
       rmF          = io.open(reverseMapFn,"r")
    end
-   local whole  = rmF.read("*all")
-   rmF.close()
+   local whole  = rmF:read("*all")
+   rmF:close()
 
    assert(loadstring(whole))()
 
