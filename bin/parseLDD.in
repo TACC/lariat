@@ -28,6 +28,13 @@ DirKeepPass1 = {
 }
    
 
+function regularize(value)
+   value = value:gsub("//+","/")
+   value = value:gsub("/%./","/")
+   value = value:gsub("/$","")
+   return value
+end
+
 function masterTbl()
    return master
 end
@@ -64,9 +71,6 @@ function main()
    local path     = getenv("PATH") or ""
    local execPath = findInPath(cmd,path)
 
-   print (cmd, execPath)
-
-   
    -- Determine if an executable or shell script
    local ldd = capture("ldd "..execPath)
    local userT = {}
@@ -89,7 +93,6 @@ function main()
    userT.runTime   = masterTbl.runTime
    userT.exec      = execPath
 
-
    local pkgT     = {}
    local libPathA = {}
    for l in ldd:split("\n") do
@@ -97,7 +100,7 @@ function main()
       l = l:gsub("%(0x.*$","")
       for d = 1, #DirKeepPass1 do
          if (l:find(DirKeepPass1[d]) == 1) then
-            libPathA[#libPathA+1] = dirname(l)
+            libPathA[#libPathA+1] = regularize(dirname(l))
             break;
          end
       end
@@ -110,6 +113,7 @@ function main()
       end
    end
 
+   userT.pkgT = pkgT
    local s = serializeTbl{indent=true, name=userT, value=userT}
    local f = io.open(masterTbl.resultFn,"w")
    if (f) then
