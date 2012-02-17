@@ -91,10 +91,10 @@ function main()
    end
 
    -- Add command line options to userT
-   userT.numCores  = getenv(NSLOTS)
-   userT.numNodes  = getenv(NHOSTS)
-   userT.account   = getenv(SGE_ACCOUNT)
-   userT.jobID     = getenv(JOB_ID)
+   userT.numCores  = getenv("NSLOTS")
+   userT.numNodes  = getenv("NHOSTS")
+   userT.account   = getenv("SGE_ACCOUNT")
+   userT.jobID     = getenv("JOB_ID")
    userT.startTime = startTime
    userT.runTime   = runTime
    userT.exec      = execPath
