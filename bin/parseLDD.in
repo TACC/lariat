@@ -95,8 +95,8 @@ function main()
    userT.numNodes  = getenv("NHOSTS")
    userT.account   = getenv("SGE_ACCOUNT")
    userT.jobID     = getenv("JOB_ID")
-   userT.startTime = startTime
-   userT.runTime   = runTime
+   userT.startTime = masterTbl.startTime
+   userT.runTime   = masterTbl.runTime
    userT.exec      = execPath
 
 
