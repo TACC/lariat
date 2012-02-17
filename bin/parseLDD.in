@@ -126,7 +126,7 @@ function main()
 
    for i = 1, #libPathA do
       local pkg = reverseMapT[libPathA[i]]
-      if (pkg and keepModule(pkg)) then
+      if (pkg and keepModule(pkg.pkg)) then
          pkgT[pkg.pkg] = pkg.flavor
       end
    end
