@@ -89,6 +89,7 @@ function main()
    userT.numNodes  = getenv("NHOSTS")
    userT.account   = getenv("SGE_ACCOUNT")
    userT.jobID     = getenv("JOB_ID")
+   userT.user      = getenv("USER")
    userT.startTime = masterTbl.startTime
    userT.runTime   = masterTbl.runTime
    userT.exec      = execPath
@@ -109,7 +110,7 @@ function main()
    for i = 1, #libPathA do
       local pkg = reverseMapT[libPathA[i]]
       if (pkg) then
-         pkgT[#pkgT+1] = {pkg.pkg, pkg.flavor}
+         pkgT[pkg.pkg] = pkg.flavor
       end
    end
 
