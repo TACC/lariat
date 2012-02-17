@@ -118,16 +118,22 @@ function main()
       l = l:gsub("%(0x.*$","")
       for d = 1, #DirKeepPass1 do
          if (l:find(DirKeepPass1[d]) == 1) then
-            libPathA[#libPathA+1] = regularize(dirname(l))
+            libPathA[#libPathA+1] = l
             break;
          end
       end
    end
 
    for i = 1, #libPathA do
-      local pkg = reverseMapT[libPathA[i]]
+      local dir, lib = splitFileName(libPathA[i])
+      local pkg = reverseMapT[regularize(dir)]
       if (pkg and keepModule(pkg.pkg)) then
-         pkgT[pkg.pkg] = pkg.flavor
+         local t       = pkgT[pkg.pkg] or {}
+         t.flavor      = pkg.flavor
+         libA          = t.libA or {}
+         libA[#libA+1] = lib
+         t.libA        = libA
+         pkgT[pkg.pkg] = t
       end
    end
 
