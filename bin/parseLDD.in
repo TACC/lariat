@@ -43,7 +43,7 @@ function findInPath(exec, path)
    path    = path or os.getenv("PATH")
    for dir in path:split(":") do
       local cmd = pathJoin(dir, exec)
-      print (cmd)
+      print (cmd, dir)
       if (posix.access(cmd,"x")) then
          result = cmd
          break
