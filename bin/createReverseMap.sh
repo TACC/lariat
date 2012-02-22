@@ -14,9 +14,17 @@ fi
 
 eval "ADMIN_DIR=\$ADMIN_$SYSHOST"
 
+OLD="$ADMIN_DIR/reverseMapT.old.lua"
+NEW="$ADMIN_DIR/reverseMapT.new.lua"
+RMAP="$ADMIN_DIR/reverseMapT.lua"
 
-rm -f $ADMIN_DIR/reverseMapT.old.lua
-/opt/apps/lmod/lmod/libexec/spider -o reverseMap > $ADMIN_DIR/reverseMapT.new.lua
-mv $ADMIN_DIR/reverseMapT.lua $ADMIN_DIR/reverseMapT.old.lua
-mv $ADMIN_DIR/reverseMapT.new.lua $ADMIN_DIR/reverseMapT.lua
+
+rm -f $OLD
+/opt/apps/lmod/lmod/libexec/spider -o reverseMap > $NEW
+chmod 644 $NEW
+
+if [ -f "$RMAP" ]; then
+  mv $RMAP $OLD
+fi
+mv $NEW  $RMAP
 
