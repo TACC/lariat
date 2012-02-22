@@ -13,6 +13,7 @@ VDATE		:= $(shell date +'%F %H:%M')
 REQUIRED_PKGS   :=                \
 	           capture        \
 	           fileOps        \
+	           serializeTbl   \
 	           strict         \
 	           string_split   \
 	           string_trim    \
