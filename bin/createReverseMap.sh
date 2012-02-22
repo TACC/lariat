@@ -1,6 +1,6 @@
 ADMIN_stampede="/fixMe/fixMe"
-ADMIN_ranger="/share/tacc_admin/reverseMapD"
-ADMIN_ls4="/home1/tacc_admin/reverseMapD"
+ADMIN_ranger="/share/moduleData/reverseMapD"
+ADMIN_ls4="/home1/moduleData/reverseMapD"
 ADMIN_longhorn="/share/tacc_admin/reverseMapD"
 
 nlocal=$(hostname -f)
