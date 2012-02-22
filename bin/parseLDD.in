@@ -132,7 +132,7 @@ function main()
          local t       = pkgT[pkg.pkg] or {}
          local libA    = t.libA or {}
          t.flavor      = pkg.flavor
-         libA[#libA+1] = string_trim(lib)
+         libA[#libA+1] = lib:trim()
          t.libA        = libA
          pkgT[pkg.pkg] = t
       end
