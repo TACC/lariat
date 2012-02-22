@@ -18,9 +18,10 @@ OLD="$ADMIN_DIR/reverseMapT.old.lua"
 NEW="$ADMIN_DIR/reverseMapT.new.lua"
 RMAP="$ADMIN_DIR/reverseMapT.lua"
 
+BASE_MODULE_PATH="/opt/apps/teragrid/modulefiles:/opt/apps/modulefiles:/opt/modulefiles"
 
 rm -f $OLD
-/opt/apps/lmod/lmod/libexec/spider -o reverseMap > $NEW
+/opt/apps/lmod/lmod/libexec/spider -o reverseMap $BASE_MODULE_PATH > $NEW
 chmod 644 $NEW
 
 if [ -f "$RMAP" ]; then
