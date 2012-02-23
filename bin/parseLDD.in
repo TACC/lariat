@@ -97,7 +97,7 @@ function main()
    if (ldd:find("not a dynamic executable")) then
       userT.execType = "user:script"
    else
-      local pkg = reverseMapT[dirname(execPath)]
+      local pkg = reverseMapT[regularize(dirname(execPath))]
       if (pkg) then
          userT.execType = "system:" .. pkg.pkg
       end
