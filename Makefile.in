@@ -1,9 +1,9 @@
 # $Id: Makefile.in 701 2011-02-08 22:27:13Z mclay $
 PATH_TO_LUA	:= @PATH_TO_LUA@
 prefix		:= @prefix@
-version		:= 1.4
 BIN		:= $(prefix)/bin
-
+BUILD_VERSION   := .build
+version         := $(shell . ./.build; echo $$PKG_VERSION)
 DIRLIST		:= $(DESTDIR)$(BIN)
 
 MAINDIR         := configure.ac Makefile.in configure
@@ -61,6 +61,8 @@ makefile: Makefile.in config.status
 config.status:
 	./config.status --recheck
 
+echo:
+	@echo $(version)
 dist:  
 	$(MAKE) DistD=DIST _dist
 
@@ -117,16 +119,15 @@ distclean: clobber
 
 gittag:
         ifneq ($(TAG),)
-	  @git status -s > /tmp/ibrun$$$$;                                           \
-          if [ -s /tmp/ibrun$$$$ ]; then                                             \
-	    echo "All files not checked in => try again";                            \
-	  else                                                                       \
-	    $(RM)                                                    $(VERSION_SRC); \
-	    echo "module('Version')"                              >  $(VERSION_SRC); \
-	    echo 'function name() return "'$(TAG) $(VDATE)'" end' >> $(VERSION_SRC); \
-            git commit -m "moving to TAG_VERSION $(TAG)"             $(VERSION_SRC); \
-            git tag -a $(TAG) -m 'Setting TAG_VERSION to $(TAG)'                   ; \
-          fi;                                                                        \
+	  @git status -s > /tmp/ibrun$$$$;                                             \
+          if [ -s /tmp/ibrun$$$$ ]; then                                               \
+	    echo "All files not checked in => try again";                              \
+	  else                                                                         \
+	    $(RM)                                                    $(BUILD_VERSION); \
+	    echo "PKG_VERSION=$(TAG)"                             >  $(BUILD_VERSION); \
+            git commit -m "moving to TAG_VERSION $(TAG)"             $(BUILD_VERSION); \
+            git tag -a $(TAG) -m 'Setting TAG_VERSION to $(TAG)'                     ; \
+          fi;                                                                          \
           rm -f /tmp/ibrun$$$$
         else
 	  @echo "To git tag do: make gittag TAG=?"
