@@ -103,6 +103,8 @@ function main()
       end
    end
 
+
+
    -- Add command line options to userT
    userT.numCores  = getenv("NSLOTS")
    userT.numNodes  = getenv("NHOSTS")
@@ -112,6 +114,12 @@ function main()
    userT.startTime = masterTbl.startTime
    userT.runTime   = masterTbl.runTime
    userT.exec      = execPath
+
+   HashSum = findInPath("sha1sum")
+   if (HashSum ~= "") then
+      userT.sha1 = capture(HashSum .. " " execPath)
+   end
+   
 
    local pkgT     = {}
    local libPathA = {}
