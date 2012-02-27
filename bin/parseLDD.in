@@ -115,7 +115,7 @@ function main()
    userT.runTime   = masterTbl.runTime
    userT.exec      = execPath
 
-   HashSum = findInPath("sha1sum")
+   local HashSum = findInPath("sha1sum")
    if (HashSum ~= "") then
       local sha1 = capture(HashSum .. " " .. execPath)
       local i,j  = sha1:find(" ")
