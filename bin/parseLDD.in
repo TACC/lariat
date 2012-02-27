@@ -117,7 +117,9 @@ function main()
 
    HashSum = findInPath("sha1sum")
    if (HashSum ~= "") then
-      userT.sha1 = capture(HashSum .. " " execPath)
+      local sha1 = capture(HashSum .. " " execPath)
+      local i,j  = sha1:find(" ")
+      userT.sha1 = sha1:sub(1,i-1)
    end
    
 
