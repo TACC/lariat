@@ -117,7 +117,8 @@ function main()
    userT.account    = getenv("SGE_ACCOUNT")
    userT.jobID      = getenv("JOB_ID")
    userT.user       = getenv("USER")
-   userT.startTime  = masterTbl.startTime
+   userT.startTime  = os.date("%c",masterTbl.startTime)
+   userT.startEpoch = masterTbl.startTime
    userT.runTime    = masterTbl.runTime
    userT.exec       = execPath
    userT.execEpoch  = execEpoch
