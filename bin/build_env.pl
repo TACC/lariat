@@ -1,6 +1,11 @@
 #!/usr/bin/perl
 #---------------------------------------------------------
-# Derive the user environment and strip out a 
+#
+# Don't propogate empty environment variables; can mess up
+# mpispawn.....
+#
+# ks 3/2/2012
+# Derive the user environment and strip out a
 # couple of key elements (to pass along to MVAPICH later).
 #
 # ks 5/3/06
@@ -29,11 +34,15 @@ $varenv = '';
 my %exclude;
 foreach (@env_exclude_list) { $exclude{$_} = 1; }
 
+#
+# sneaky mod encountered on Lonestar - ks (3/2/2012)
+# don't propogate empty environment variables
+
 foreach (keys %ENV) {
-    unless ($exclude{$_} || $_ =~  /$env_begin_with/ || $ENV{$_} =~ m/[ \n\t;*]/) { $varenv .= " $_=\"$ENV{$_}\" ";}
+    unless ($exclude{$_} || $_ =~  /$env_begin_with/ || $ENV{$_} eq '' || $ENV{$_} =~ m/[ \n\t;*]/) { $varenv .= " $_=$ENV{$_} ";}
 }
 
-# Report length of environment string, in the reported environment 
+# Report length of environment string, in the reported environment
 # with the TACC_ENVLEN variable.
 
 $base_size = length($varenv);
