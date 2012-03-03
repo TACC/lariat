@@ -11,6 +11,7 @@ require("VarDump")
 local Dbg       = require("Dbg")
 local Optiks    = require("Optiks")
 local Version   = "1.4"
+local lfs       = require("lfs")
 local master    = {}
 local getenv    = os.getenv
 local concatTbl = table.concat
@@ -87,8 +88,13 @@ function main()
          break
       end
    end
-   local path     = getenv("PATH") or ""
-   local execPath = findInPath(cmd,path)
+   local path      = getenv("PATH") or ""
+   local execPath  = abspath(findInPath(cmd,path))
+   local attrT     = lfs.attributes(execPath)
+   local execEpoch = "unknown"
+   if (attrT) then
+      execEpoch = attrT.modification
+   end
 
    -- Determine if an executable or shell script
    local ldd = capture("ldd "..execPath)
@@ -106,14 +112,17 @@ function main()
 
 
    -- Add command line options to userT
-   userT.numCores  = getenv("NSLOTS")
-   userT.numNodes  = getenv("NHOSTS")
-   userT.account   = getenv("SGE_ACCOUNT")
-   userT.jobID     = getenv("JOB_ID")
-   userT.user      = getenv("USER")
-   userT.startTime = masterTbl.startTime
-   userT.runTime   = masterTbl.runTime
-   userT.exec      = execPath
+   userT.numCores   = getenv("NSLOTS")
+   userT.numNodes   = getenv("NHOSTS")
+   userT.account    = getenv("SGE_ACCOUNT")
+   userT.jobID      = getenv("JOB_ID")
+   userT.user       = getenv("USER")
+   userT.startTime  = os.date("%c",masterTbl.startTime)
+   userT.startEpoch = masterTbl.startTime
+   userT.runTime    = masterTbl.runTime
+   userT.exec       = execPath
+   userT.execEpoch  = execEpoch
+   userT.execModify = os.date("%c",execEpoch)
 
    local HashSum = findInPath("sha1sum")
    if (HashSum ~= "") then
