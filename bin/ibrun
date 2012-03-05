@@ -313,6 +313,10 @@ if [ $res -ne 0 ]; then
 fi
 
 
+
+  
+
+
 ## If set, check -n and -o options for non-numeric input.
 if [ x"$ibrun_n_option" != "x" ]; then
   echo $ibrun_n_option | grep "[^0-9]" > /dev/null 2>&1
@@ -335,6 +339,7 @@ if [ $res -ne 0 ]; then
 fi
             
 								
+
 if [ x"$ibrun_n_option" != "x" ]; then
     ## Double check user's -n value: it can't be larger than MY_NSLOTS
     if [ $ibrun_n_option -gt $MY_NSLOTS ]; then
@@ -394,6 +399,14 @@ if [ x"$ibrun_n_option" != "x" ]; then
 
   # Handle ssh mvapich 
   if [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MODE" == "xmvapich2_ssh" ]; then
+    if [ x"$ibrun_n_option" != x -a "x$MODE" == xmvapich1_ssh ]; then
+      rem=$(($ibrun_o_option % $CPN))
+      if [ "$rem" != 0 ]; then
+        export VIADEV_USE_AFFINITY=0
+        export VIADEV_ENABLE_AFFINITY=0
+      fi
+    fi
+    
     # Create a temporary file for the subset of hosts which we will run on.
     subhostfile_tacc=`mktemp $home_sge_dir/job.$JOB_ID.subhostlist.XXXXXXXX`
 
