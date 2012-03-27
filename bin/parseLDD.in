@@ -121,11 +121,11 @@ function main()
 
 
    -- Add command line options to userT
-   userT.numCores   = getenv("NSLOTS")
-   userT.numNodes   = getenv("NHOSTS")
-   userT.account    = getenv("SGE_ACCOUNT")
-   userT.jobID      = getenv("JOB_ID")
-   userT.user       = getenv("USER")
+   userT.numCores   = getenv("NSLOTS") or "0"
+   userT.numNodes   = getenv("NHOSTS") or "0"
+   userT.account    = getenv("SGE_ACCOUNT") or "unknown"
+   userT.jobID      = getenv("JOB_ID")      or "unknown"
+   userT.user       = getenv("USER")        or "unknown"
    userT.startTime  = os.date("%c",masterTbl.startTime)
    userT.startEpoch = masterTbl.startTime
    userT.runTime    = masterTbl.runTime
@@ -153,6 +153,21 @@ function main()
          end
       end
    end
+
+   userT.sizeT = { text = 0, data = 0, bss = 0}
+   if (userT.execType == "user:binary") then
+      local sizeC = capture("size ".. execPath)
+      local icount = 0
+      for l in sizeC:split("\n") do
+         icount = icount+1
+         if (icount == 2) then
+            local _,_, txt,dat,bss = l:find("%s*(%d+)%s+(%d+)%s+(%d+)")
+            userT.sizeT = { text = txt, data= dat, bss = bss}
+            break
+         end
+      end
+   end
+
 
    for i = 1, #libPathA do
       local dir, lib = splitFileName(libPathA[i])
