@@ -1,6 +1,10 @@
 #!/bin/bash
 # -*- shell-script -*-
  
+if [ -z "$TACC_IBWRAPPER_BIN" ]; then
+  export TACC_IBWRAPPER_BIN=$(dirname $0)
+fi
+
 ########################################################################
 # Figure out which system we are on.
 ########################################################################
@@ -64,6 +68,8 @@ if [ "$1" == "-h" -o "$1" == "--help" -o "$1" == "-help" ]; then
 fi
 
 echo "TACC: Starting up job $JOB_ID"
+
+
 
 # Get the PE hostfile, number of slots and wayness from the environment
 pe_hostfile=$PE_HOSTFILE
