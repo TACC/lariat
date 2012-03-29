@@ -202,10 +202,12 @@ function main()
 
    userT.pkgT = pkgT
    local s = serializeTbl{indent=true, name=userT, value=userT}
-   local f = io.open(masterTbl.resultFn,"w")
-   if (f) then
-      f:write(s)
-      f:close()
+   if (masterTbl.resultFn) then
+      local f = io.open(masterTbl.resultFn,"w")
+      if (f) then
+         f:write(s)
+         f:close()
+      end
    end
 end
 
