@@ -20,10 +20,11 @@ require("VarDump")
 local Dbg       = require("Dbg")
 local Optiks    = require("Optiks")
 local Version   = "1.4"
+local concatTbl = table.concat
+local getenv    = os.getenv
 local lfs       = require("lfs")
 local master    = {}
-local getenv    = os.getenv
-local concatTbl = table.concat
+local posix     = require("posix")
 
 ignoreT = {
    tacc_affinity     = 1,
@@ -46,6 +47,12 @@ IgnoreModA = {
    "^mvapich2/",
    "^openmpi/",
 }   
+
+function isExec(fn)
+   if (fn == nil) then return false end
+   local result = posix.access(fn,"rx")
+   return result
+end
 
 function keepModule(mod)
    for i = 1, #IgnoreModA do
@@ -72,7 +79,7 @@ function main()
    options()
    local masterTbl  = masterTbl()
    local pargs      = masterTbl.pargs
-   local cmd        = "unknown"
+   local cmd        = nil
 
    -- open reverseMap file and read it in.
 
@@ -97,13 +104,21 @@ function main()
          break
       end
    end
+
+   if (cmd == nil) then return end
+
    local path      = getenv("PATH") or ""
-   local execPath  = abspath(findInPath(cmd,path))
+   local execPath  = findInPath(cmd,path)
+   if (execPath == nil or execPath == "") then return end
+   execPath        = abspath(execPath)
+   if (not isExec(execPath)) then return end
+
    local attrT     = lfs.attributes(execPath)
    local execEpoch = "unknown"
    if (attrT) then
       execEpoch = attrT.modification
    end
+
 
    -- Determine if an executable or shell script
    local ldd = capture("ldd "..execPath)
