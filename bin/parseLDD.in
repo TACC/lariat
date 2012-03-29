@@ -89,10 +89,13 @@ function main()
       reverseMapFn = pathJoin(masterTbl.reverseMapD,"reverseMapT.old.lua")
       rmF          = io.open(reverseMapFn,"r")
    end
-   local whole  = rmF:read("*all")
-   rmF:close()
 
-   assert(loadstring(whole))()
+   if (rmF) then
+      local whole  = rmF:read("*all")
+      rmF:close()
+
+      assert(loadstring(whole))()
+   end
 
 
    -- find user command from command line.
