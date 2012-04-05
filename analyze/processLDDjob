@@ -47,7 +47,9 @@ function processLuaRecord(fn, sgeT, accT)
    if (f == nil) then return end
    local whole = f:read("*all")
    f:close()
-   whole = "userT="..whole
+   if (whole:sub(1,1) == "{") then
+      whole = "userT="..whole
+   end
    f=loadstring(whole)
    if (not f) then return end
       
@@ -80,7 +82,6 @@ function processLuaRecord(fn, sgeT, accT)
       accT.system.su  = accT.system.su  + su
    end
 end
-
 
 function processExecT(sgeT, execT)
    for k,v in pairs(sgeT) do
