@@ -1,0 +1,174 @@
+#!/usr/bin/env lua
+-- -*- lua -*-
+local cmd = arg[0]
+
+local i,j = cmd:find(".*/")
+local cmd_dir = "./"
+if (i) then
+   cmd_dir = cmd:sub(1,j)
+end
+package.path = cmd_dir .. "?.lua;" .. package.path
+local floor     = math.floor
+local lfs       = require("lfs")
+local mod       = math.mod
+
+require("strict")
+local BeautifulTbl = require("BeautifulTbl")
+require("serializeTbl")
+require("string_split")
+require("fileOps")
+require("VarDump")
+userT = {}
+local Dbg = require("Dbg")
+------------------------------------------------------------------------
+-- This function returns an iterator:  The iterator returns the next
+-- username and homeDir or nil if there are no users left.
+
+local largeBSS = 1024*1024*1024
+
+function processPWRec(fn)
+   io.input(fn)
+   return 
+     function()
+        local line = io.read()
+        if (line == nil) then
+           return nil
+        end
+        local a    = {}
+        for v in line:split(':') do
+           a[#a + 1] = v
+        end
+        return a[1], a[6]
+     end
+end
+
+function processLuaRecord(fn, sgeT, accT)
+   local f=io.open(fn, "r")
+   if (f == nil) then return end
+   local whole = f:read("*all")
+   f:close()
+   whole = "userT="..whole
+   f=loadstring(whole)
+   if (not f) then return end
+      
+   f()
+
+   local jobID = userT.jobID
+   sgeT[jobID] = {}
+   for k, v in pairs(userT) do
+      sgeT[jobID][k] = v
+   end
+
+   local su = userT.numCores * userT.runTime / 3600.0
+
+   local t = accT[userT.execType] or { num = 0, su = 0, user = {} }
+
+   t.num   = t.num + 1
+   t.su    = t.su  + su
+   t.user[userT.user] = (t.user[userT.user] or 0) + 1
+   accT[userT.execType] = t
+
+   local sizeT = userT.sizeT or {bss = 0}
+   local bss = tonumber(sizeT.bss or 0)
+   if (bss > largeBSS) then
+      accT.bss.num = accT.bss.num + 1
+      accT.bss.jobID[jobID] = {userT.user, bss/(1024*1024*1024)}
+   end
+
+   if (userT.execType:find("^system:")) then
+      accT.system.num = accT.system.num + 1
+      accT.system.su  = accT.system.su  + su
+   end
+end
+
+
+function processExecT(sgeT, execT)
+   for k,v in pairs(sgeT) do
+      if (v.execType == "user:binary" or v.execType:find("^system:")) then
+         local exec = barefilename(v.exec)
+         local t = execT[exec] or { num=0, su = 0}
+         local su = v.numCores * v.runTime /3600.0
+         t.su  = t.su  + su
+         t.num = t.num + 1
+         execT[exec] = t
+      end
+   end
+end
+
+function reportTop(execT)
+   local a = {}
+   for k,v in pairs(execT) do
+      a[#a+1] = {name=k, su=v.su, num=v.num}
+   end
+
+   table.sort(a,function(x,y) return x.su > y.su end)
+
+   local n = math.min(20,#a)
+   local b = {}
+   local fmt = "%7.2f"
+
+   for i = 1,n do
+      local su = fmt:format(a[i].su)
+      b[#b+1] = {a[i].name, su, tostring(a[i].num)}
+   end
+   local bt = BeautifulTbl:new{tbl=b}
+   bt:printTbl();
+
+end
+function main()
+
+   local numTimes = 0
+   local iuser = 0
+   local unit  = 2
+   local fence = unit
+   --------------------------------------------------------------
+   -- count number of active users
+
+   local sgeT = {}
+   local accT = {bss     = {num = 0, jobID={}},
+                 system  = {num= 0, su= 0},
+   }
+
+   for userName, homeDir in processPWRec("/etc/passwd") do
+      local dir = pathJoin(homeDir,".sge")
+      if ( isDir(dir)) then
+         iuser = iuser + 1
+      end
+   end
+   local nusers = iuser
+
+   local activeT = {}
+   iuser = 0
+   for userName, homeDir in processPWRec("/etc/passwd") do
+      local dir = pathJoin(homeDir,".sge")
+      if ( isDir(dir)) then
+         iuser = iuser + 1
+         local j = floor(iuser/nusers*100)
+         if ( j > fence) then
+            io.stdout:write("#")
+            io.stdout:flush()
+            fence = fence + unit
+         end
+         for file in lfs.dir(dir) do
+            if (file:sub(-4,-1) == ".lua") then
+               activeT[userName] = (activeT[userName] or 0) + 1
+               numTimes = numTimes + 1
+               local fn = pathJoin(dir,file)
+               processLuaRecord(fn, sgeT, accT)
+           end
+         end
+      end
+   end
+   io.stdout:write("\n")
+
+   local s = serializeTbl{indent=true, name="accT", value=accT}
+   io.stdout:write("\n",s,"\n")
+               
+   local execT = {}
+   processExecT(sgeT,execT)
+
+   reportTop(execT)
+
+end
+
+main()

@@ -201,7 +201,7 @@ function main()
    end
 
    userT.pkgT = pkgT
-   local s = serializeTbl{indent=true, name=userT, value=userT}
+   local s = serializeTbl{indent=true, name="userT", value=userT}
    if (masterTbl.resultFn) then
       local f = io.open(masterTbl.resultFn,"w")
       if (f) then
