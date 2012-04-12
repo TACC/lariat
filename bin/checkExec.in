@@ -40,6 +40,7 @@ activeList = {}
 function canonicalCompilerVersion(v)
    v       = v or ""
    v       = v:gsub("-[0-9]*","")
+   v       = v:gsub("%-%.","-")
    local a = {}
    for vv in v:split("%.") do
       a[#a+1] = vv
