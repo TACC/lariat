@@ -1,10 +1,6 @@
 #!/bin/bash
 # -*- shell-script -*-
  
-if [ -z "$TACC_IBWRAPPER_BIN" ]; then
-  export TACC_IBWRAPPER_BIN=$(dirname $0)
-fi
-
 ########################################################################
 # Figure out which system we are on.
 ########################################################################
@@ -86,7 +82,10 @@ srq_size=2048
 default_time_out=23
   
 # Find out which MPI stack we're using
-MODE=`$TACC_IBWRAPPER_BIN/getmode.sh`
+MODE=$TACC_MPI_GETMODE
+if [ -z $MODE ]; then
+  MODE=`getmode.sh`
+fi 
 
 # Set our files and directories
 home_sge_dir="$HOME/.sge"
@@ -145,7 +144,7 @@ if [ x"$MODE" == xmvapich2_mpd ]; then
     slots=$(( $slots + $i ))
   done
   echo -n $slots > $nslotsfile_tacc
-  mpdboot --rsh=$TACC_IBWRAPPER_BIN/tacc_rsh --file=$hostfile_tacc -n $num_mpds --ncpus=$local_ncpus --verbose --maxbranch=16
+  mpdboot --rsh=tacc_rsh --file=$hostfile_tacc -n $num_mpds --ncpus=$local_ncpus --verbose --maxbranch=16
 
   if [ $? -ne 0 ]; then
     echo "TACC: MPD setup failed. Exiting."
@@ -472,7 +471,7 @@ elif [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich1_devel_ssh" -o x"$MO
 
     # How sweet is this?  MVAPICH1 AND MVAPICH2 using the same baby.
 
-    TACC_ENV=`$TACC_IBWRAPPER_BIN/build_env.pl`
+    TACC_ENV=`build_env.pl`
     $MPICH_HOME/bin/mpirun_rsh -np $MY_NSLOTS -hostfile $hostfile_tacc $MY_MPIRUN_OPTIONS $TACC_ENV $MVAPICH_LD_PRELOAD $fullcmd "$@"
     res=$?
 

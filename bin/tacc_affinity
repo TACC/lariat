@@ -1,7 +1,10 @@
 #!/bin/bash
 # -*- shell-script -*-
 
-MODE=`$TACC_IBWRAPPER_BIN/getmode.sh`
+MODE=$TACC_MPI_GETMODE
+if [ -z $MODE ]; then
+  MODE=`getmode.sh`
+fi 
 
 # First determine "wayness" of PE
 myway=`builtin echo $PE | /bin/sed s/way//`
