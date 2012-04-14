@@ -34,13 +34,18 @@ ignoreLines = {
 }
    
 
+compilerT = {
+   ['.12.1'] = "12",
+   ['12.1'] = "12",
+}
+
 
 activeList = {}
 
 function canonicalCompilerVersion(v)
    v       = v or ""
    v       = v:gsub("-[0-9]*","")
-   v       = v:gsub("%-%.","-")
+   v       = compilerT[v] or v
    local a = {}
    for vv in v:split("%.") do
       a[#a+1] = vv
