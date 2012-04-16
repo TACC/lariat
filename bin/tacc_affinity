@@ -21,6 +21,9 @@ h=${h%%.tacc.utexas.edu}
 first=${h%%.*}
 SYSHOST=${h#*.}
 
+if [ "$first" = spur ]; then
+  SYSHOST=ranger
+fi
 
 local_rank=$(( $my_rank % $myway ))
 
