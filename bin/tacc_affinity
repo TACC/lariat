@@ -1,48 +1,25 @@
 #!/bin/bash
 # -*- shell-script -*-
 
-MODE=$TACC_MPI_GETMODE
-if [ -z $MODE ]; then
-  MODE=`getmode.sh`
-fi 
-
 # First determine "wayness" of PE
 myway=`builtin echo $PE | /bin/sed s/way//`
 
-# Determine local compute node rank number
-if [ x"$MODE" == "xmvapich2_mpd" ]; then
-  export MV2_USE_AFFINITY=0
-  export MV2_ENABLE_AFFINITY=0
-  my_rank=$PMI_RANK 
-elif [ x"$MODE" == "xmvapich2_ssh" ]; then
-  export MV2_USE_AFFINITY=0
-  export MV2_ENABLE_AFFINITY=0
-  my_rank=$PMI_ID
-elif [ x"$MODE" == "xmvapich1_ssh" ]; then
-  export VIADEV_USE_AFFINITY=0
-  export VIADEV_ENABLE_AFFINITY=0
-  my_rank=$MPIRUN_RANK
-elif [ x"$MODE" == "xmvapich1_devel_ssh" ]; then
-  export VIADEV_USE_AFFINITY=0
-  export VIADEV_ENABLE_AFFINITY=0
-else
-  echo "TACC: Could not determine MPI stack. Exiting!"
-  exit 1
-fi  
+
+export MV2_USE_AFFINITY=0
+export MV2_ENABLE_AFFINITY=0
+export VIADEV_USE_AFFINITY=0
+export VIADEV_ENABLE_AFFINITY=0
 
 my_rank=$(( ${PMI_RANK-0} + ${PMI_ID-0} + ${MPIRUN_RANK-0} + ${OMPI_COMM_WORLD_RANK-0} + ${OMPI_MCA_ns_nds_vpid-0} ))
 
 ########################################################################
 # Figure out which system we are on.
 ########################################################################
-nlocal=$(hostname -f)
-nA=($(builtin echo "$nlocal" | tr '.' ' '))
-first=${nA[0]}
-SYSHOST=${nA[1]}
 
-if [ "$first" = spur ]; then
-  SYSHOST=ranger
-fi
+h=$(hostname -f)
+h=${h%%.tacc.utexas.edu}
+first=${h%%.*}
+SYSHOST=${h#*.}
 
 
 local_rank=$(( $my_rank % $myway ))
