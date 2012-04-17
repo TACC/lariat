@@ -11,6 +11,7 @@ export VIADEV_USE_AFFINITY=0
 export VIADEV_ENABLE_AFFINITY=0
 
 my_rank=$(( ${PMI_RANK-0} + ${PMI_ID-0} + ${MPIRUN_RANK-0} + ${OMPI_COMM_WORLD_RANK-0} + ${OMPI_MCA_ns_nds_vpid-0} ))
+my_size=$(( ${PMI_SIZE-0} + ${MPIRUN_NPROCS-0} + ${OMPI_COMM_WORLD_SIZE-0} + ${OMPI_MCA_ns_nds_num_procs-0} ))
 
 ########################################################################
 # Figure out which system we are on.
