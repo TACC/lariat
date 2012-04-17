@@ -83,7 +83,7 @@ function processLuaRecord(fn, sgeT, accT)
    end
 end
 
-function processExecT(sgeT, execT)
+function processExecT(sgeT, execT, libT)
    for k,v in pairs(sgeT) do
       if (v.execType == "user:binary" or v.execType:find("^system:")) then
          local exec = barefilename(v.exec)
@@ -92,9 +92,42 @@ function processExecT(sgeT, execT)
          t.su  = t.su  + su
          t.num = t.num + 1
          execT[exec] = t
+      elseif (v.pkgT ~= {} ) then
+         local su = v.numCores * v.runTime /3600.0
+         recordLibT(su, v.pkgT, libT)
       end
    end
 end
+
+function recordLibT(su, pkgT, libT)
+   for k, v in pairs(pkgT) do
+      local t = libT[k] or { su = 0.0, flavor = {}, num = 0}
+      t.su  = t.su  + su
+      t.num = t.num + 1
+      flavor[v.flavor] = (flavor[v.flavor] or 0 ) + su
+      
+      libT[k] = t
+   end
+end
+
+function reportLibT(libT)
+   local a = {}
+   for k,v in pairs(libT) do
+      a[#a+1] = {name=k su=v.su, num=v.num}
+   end
+   table.sort(a,function(x,y) return x.su > y.su end)
+   local fmt = "%7.2f"
+   local b   = {}
+
+   for i = 1, #a do
+      local su = fmt:format(a[i].su)
+      b[#b+1]  = {a[i].name, su, tostring(a[i].num)}
+   end
+   local bt = BeautifulTbl:new{tbl=b}
+   bt:printTbl();
+
+end
+
 
 function reportTop(execT)
    local a = {}
@@ -125,6 +158,7 @@ function main()
    --------------------------------------------------------------
    -- count number of active users
 
+   local libT = {}
    local sgeT = {}
    local accT = {bss     = {num = 0, jobID={}},
                  system  = {num= 0, su= 0},
@@ -155,7 +189,7 @@ function main()
                activeT[userName] = (activeT[userName] or 0) + 1
                numTimes = numTimes + 1
                local fn = pathJoin(dir,file)
-               processLuaRecord(fn, sgeT, accT)
+               processLuaRecord(fn, sgeT, accT, libT)
            end
          end
       end
@@ -167,6 +201,8 @@ function main()
                
    local execT = {}
    processExecT(sgeT,execT)
+
+   
 
    reportTop(execT)
 
