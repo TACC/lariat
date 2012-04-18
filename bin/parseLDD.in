@@ -64,9 +64,11 @@ function keepModule(mod)
 end
 
 function regularize(value)
+   
    value = value:gsub("//+","/")
    value = value:gsub("/%./","/")
    value = value:gsub("/$","")
+   value = abspath(value)
    return value
 end
 
