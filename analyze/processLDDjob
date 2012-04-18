@@ -42,7 +42,7 @@ function processPWRec(fn)
      end
 end
 
-function processLuaRecord(fn, sgeT, accT)
+function processLuaRecord(fn, sgeT, accT, libT)
    local f=io.open(fn, "r")
    if (f == nil) then return end
    local whole = f:read("*all")
@@ -50,9 +50,9 @@ function processLuaRecord(fn, sgeT, accT)
    if (whole:sub(1,1) == "{") then
       whole = "userT="..whole
    end
+
    f=loadstring(whole)
-   if (not f) then return end
-      
+   if (not f) then return  end
    f()
 
    local jobID = userT.jobID
@@ -81,20 +81,25 @@ function processLuaRecord(fn, sgeT, accT)
       accT.system.num = accT.system.num + 1
       accT.system.su  = accT.system.su  + su
    end
+
+   if (next(userT.pkgT) ~= nil ) then
+      recordLibT(su, userT.pkgT, libT)
+   end
 end
 
-function processExecT(sgeT, execT, libT)
+function processExecT(sgeT, execT)
    for k,v in pairs(sgeT) do
       if (v.execType == "user:binary" or v.execType:find("^system:")) then
          local exec = barefilename(v.exec)
-         local t = execT[exec] or { num=0, su = 0}
+         local t = execT[exec] or { num=0, su = 0, job={id="", su = 0}}
          local su = v.numCores * v.runTime /3600.0
          t.su  = t.su  + su
          t.num = t.num + 1
+         if (su > t.job.su) then
+            t.job.su = su
+            t.job.id = v.jobID
+         end
          execT[exec] = t
-      elseif (v.pkgT ~= {} ) then
-         local su = v.numCores * v.runTime /3600.0
-         recordLibT(su, v.pkgT, libT)
       end
    end
 end
@@ -104,7 +109,7 @@ function recordLibT(su, pkgT, libT)
       local t = libT[k] or { su = 0.0, flavor = {}, num = 0}
       t.su  = t.su  + su
       t.num = t.num + 1
-      flavor[v.flavor] = (flavor[v.flavor] or 0 ) + su
+      t.flavor[v.flavor] = (t.flavor[v.flavor] or 0 ) + su
       
       libT[k] = t
    end
@@ -113,16 +118,29 @@ end
 function reportLibT(libT)
    local a = {}
    for k,v in pairs(libT) do
-      a[#a+1] = {name=k su=v.su, num=v.num}
+      a[#a+1] = {name=k, su=v.su, num=v.num}
    end
+   if (#a > 0) then
+      print("\nFound ",#a," shared libraries:")
+   else
+      print("\nFound no shared libraries\n")
+      return
+   end
+
    table.sort(a,function(x,y) return x.su > y.su end)
    local fmt = "%7.2f"
    local b   = {}
 
+   b[#b+1] = { "Library Module Name ","Total SU Used ", "Number of Jobs" }
+   b[#b+1] = { "------------------- ","------------- ", "--------------" }
    for i = 1, #a do
       local su = fmt:format(a[i].su)
       b[#b+1]  = {a[i].name, su, tostring(a[i].num)}
    end
+
+
+   
+
    local bt = BeautifulTbl:new{tbl=b}
    bt:printTbl();
 
@@ -132,7 +150,7 @@ end
 function reportTop(execT)
    local a = {}
    for k,v in pairs(execT) do
-      a[#a+1] = {name=k, su=v.su, num=v.num}
+      a[#a+1] = {name=k, su=v.su, num=v.num, id=v.job.id}
    end
 
    table.sort(a,function(x,y) return x.su > y.su end)
@@ -141,9 +159,14 @@ function reportTop(execT)
    local b = {}
    local fmt = "%7.2f"
 
+   print ("\nTop ",n, " jobs:\n")
+
+   b[#b+1] = {"Exec Name", "Total SU used", "Number of Jobs", "Job ID"}
+   b[#b+1] = {"---------", "-------------", "--------------", "------"}
+
    for i = 1,n do
       local su = fmt:format(a[i].su)
-      b[#b+1] = {a[i].name, su, tostring(a[i].num)}
+      b[#b+1] = {a[i].name, su, tostring(a[i].num),a[i].id}
    end
    local bt = BeautifulTbl:new{tbl=b}
    bt:printTbl();
@@ -186,9 +209,9 @@ function main()
          end
          for file in lfs.dir(dir) do
             if (file:sub(-4,-1) == ".lua") then
+               local fn = pathJoin(dir,file)
                activeT[userName] = (activeT[userName] or 0) + 1
                numTimes = numTimes + 1
-               local fn = pathJoin(dir,file)
                processLuaRecord(fn, sgeT, accT, libT)
            end
          end
@@ -202,7 +225,7 @@ function main()
    local execT = {}
    processExecT(sgeT,execT)
 
-   
+   reportLibT(libT)   
 
    reportTop(execT)
 
