@@ -1,3 +1,7 @@
+MCLAY=~mclay
+export LUA_PATH="$MCLAY"'/l/pkg/projectsLua/projectsLua/share/5.1/?.lua;;'
+export LUA_CPATH="$MCLAY"'/l/pkg/projectsLua/projectsLua/lib/5.1/?.so;;'
+
 ADMIN_stampede="/fixMe/fixMe"
 ADMIN_ranger="/share/moduleData/reverseMapD"
 ADMIN_ls4="/home1/moduleData/reverseMapD"
