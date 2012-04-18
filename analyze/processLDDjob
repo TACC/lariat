@@ -91,10 +91,12 @@ function processExecT(sgeT, execT)
    for k,v in pairs(sgeT) do
       if (v.execType == "user:binary" or v.execType:find("^system:")) then
          local exec = barefilename(v.exec)
-         local t = execT[exec] or { num=0, su = 0, job={id="", su = 0}}
+         local t = execT[exec] or { num=0, su = 0, job={id="", su = 0},userT={}}
          local su = v.numCores * v.runTime /3600.0
          t.su  = t.su  + su
          t.num = t.num + 1
+         t.userT[v.user] = 1
+
          if (su > t.job.su) then
             t.job.su = su
             t.job.id = v.jobID
@@ -150,7 +152,12 @@ end
 function reportTop(execT)
    local a = {}
    for k,v in pairs(execT) do
-      a[#a+1] = {name=k, su=v.su, num=v.num, id=v.job.id}
+      local t = v.userT
+      local icount = 0
+      for _, _ in next, t do
+         icount = icount + 1
+      end
+      a[#a+1] = {name=k, su=v.su, num=v.num, id=v.job.id, numUsers=icount}
    end
 
    table.sort(a,function(x,y) return x.su > y.su end)
@@ -161,12 +168,12 @@ function reportTop(execT)
 
    print ("\nTop ",n, " jobs:\n")
 
-   b[#b+1] = {"Exec Name", "Total SU used", "Number of Jobs", "Job ID"}
-   b[#b+1] = {"---------", "-------------", "--------------", "------"}
+   b[#b+1] = {"Exec Name", "Total SU used", "Number of Jobs", "Job ID", "Number of Users"}
+   b[#b+1] = {"---------", "-------------", "--------------", "------", "---------------"}
 
    for i = 1,n do
       local su = fmt:format(a[i].su)
-      b[#b+1] = {a[i].name, su, tostring(a[i].num),a[i].id}
+      b[#b+1] = {a[i].name, su, tostring(a[i].num),a[i].id,tostring(a[i].numUsers)}
    end
    local bt = BeautifulTbl:new{tbl=b}
    bt:printTbl();
