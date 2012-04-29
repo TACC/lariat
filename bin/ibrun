@@ -123,10 +123,12 @@ if [ x$TACC_DARSHAN_LIB != "x" ]; then
   else
     IBRUN_LD_PRELOAD="${IBRUN_LD_PRELOAD}:${TACC_DARSHAN_FORTRAN_LIB}:${TACC_DARSHAN_LIB}"
   fi
+fi
+
+if [ -n "$IBRUN_LD_PRELOAD" ]; then
   MVAPICH_LD_PRELOAD="LD_PRELOAD=$IBRUN_LD_PRELOAD"
   OPENMPI_LD_PRELOAD="-x LD_PRELOAD=$IBRUN_LD_PRELOAD"
 fi
-
 
 # Build hostfile for mvapich2 
 if [ x"$MODE" == xmvapich2_mpd ]; then
