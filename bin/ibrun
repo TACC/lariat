@@ -1,6 +1,30 @@
 #!/bin/bash
 # -*- shell-script -*-
  
+##################################################
+# addto: make a colon separated variable
+# Usage:  FOO=$(addto FOO foo bar ...)
+addto()
+{
+  local name=$1
+  shift 
+  local var
+  eval "var=\$$name"
+  local result=$var
+
+  for i in "$@" ; do
+    if [ -n "$i" ]; then
+      if [ -n "$result" ]; then
+	result=$result:$i
+      else
+	result=$i
+      fi
+    fi
+  done
+  
+  echo $result
+}
+
 ########################################################################
 # Figure out which system we are on.
 ########################################################################
@@ -108,21 +132,11 @@ if [ -f $hostfile_tacc ]; then
   rm $hostfile_tacc
 fi
 
-
-# Set local LD_PRELOAD with DARSHAN
-if [ x$LD_PRELOAD == "x" ]; then
-  IBRUN_LD_PRELOAD=""
-else
-  IBRUN_LD_PRELOAD="$LD_PRELOAD"
-  unset LD_PRELOAD
-fi
+IBRUN_LD_PRELOAD=$(addto IBRUN_LD_PRELOAD "$LD_PRELOAD")
+unset LD_PRELOAD
 
 if [ x$TACC_DARSHAN_LIB != "x" ]; then
-  if [ x$IBRUN_LD_PRELOAD == "x" ]; then
-    IBRUN_LD_PRELOAD="${TACC_DARSHAN_FORTRAN_LIB}:${TACC_DARSHAN_LIB}"
-  else
-    IBRUN_LD_PRELOAD="${IBRUN_LD_PRELOAD}:${TACC_DARSHAN_FORTRAN_LIB}:${TACC_DARSHAN_LIB}"
-  fi
+  IBRUN_LD_PRELOAD=$(addto IBRUN_LD_PRELOAD ${TACC_DARSHAN_FORTRAN_LIB} ${TACC_DARSHAN_LIB})
 fi
 
 if [ -n "$IBRUN_LD_PRELOAD" ]; then
