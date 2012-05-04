@@ -178,6 +178,11 @@ function reportTop(execT)
    local bt = BeautifulTbl:new{tbl=b}
    bt:printTbl();
 
+   for i = 1, #a do
+      print(i,",",a[i].su)
+   end
+      
+
 end
 function main()
 
