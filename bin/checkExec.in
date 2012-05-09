@@ -176,6 +176,14 @@ function main()
 
    local execPath = findInPath(cmd,path)
 
+   if (execPath == "") then
+      io.stdout:write("******************************************************\n",
+                      "Could not find: ",tostring(path)," in your PATH\n",
+                      "******************************************************\n")
+      return 1
+   end
+
+
    local ldd = capture("ldd "..execPath)
 
    if (checkForMissingLibraries(ldd)) then
