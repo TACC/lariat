@@ -214,6 +214,10 @@ function reportTop(execT, execFile)
    end
 
 end
+function masterTbl()
+   return master
+end
+
 function main()
 
    local numTimes = 0
