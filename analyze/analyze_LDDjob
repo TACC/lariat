@@ -29,4 +29,4 @@ eval SOURCEME=\$SOURCEME_$SYSHOST
 
 module load lua
 
-$MCLAY/w/ibwrapper/analyze/processLDDjob
+$MCLAY/w/ibwrapper/analyze/processLDDjob "$@"

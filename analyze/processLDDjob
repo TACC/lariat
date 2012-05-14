@@ -11,9 +11,11 @@ package.path = cmd_dir .. "?.lua;" .. package.path
 local floor     = math.floor
 local lfs       = require("lfs")
 local mod       = math.mod
+execNameA       = {}
 
 require("strict")
 local BeautifulTbl = require("BeautifulTbl")
+local master       = {}
 require("serializeTbl")
 require("string_split")
 require("fileOps")
@@ -149,7 +151,30 @@ function reportLibT(libT)
 end
 
 
-function reportTop(execT)
+function displayExecT(a, msg)
+   local b = {}
+   local fmt = "%7.2f"
+
+   print ("\n",msg,":\n")
+
+   b[#b+1] = {"Exec Name", "Total SU used", "Number of Jobs", "Job ID", "Number of Users"}
+   b[#b+1] = {"---------", "-------------", "--------------", "------", "---------------"}
+
+   for i = 1,#a do
+      local su = fmt:format(a[i].su)
+      b[#b+1] = {a[i].name, su, tostring(a[i].num),a[i].id,tostring(a[i].numUsers)}
+   end
+   local bt = BeautifulTbl:new{tbl=b}
+   bt:printTbl();
+
+   for i = 1, #a do
+      print(i,",",a[i].su)
+   end
+      
+
+end
+
+function reportTop(execT, execFile)
    local a = {}
    for k,v in pairs(execT) do
       local t = v.userT
@@ -163,25 +188,30 @@ function reportTop(execT)
    table.sort(a,function(x,y) return x.su > y.su end)
 
    local n = math.min(20,#a)
-   local b = {}
-   local fmt = "%7.2f"
 
-   print ("\nTop ",n, " jobs:\n")
-
-   b[#b+1] = {"Exec Name", "Total SU used", "Number of Jobs", "Job ID", "Number of Users"}
-   b[#b+1] = {"---------", "-------------", "--------------", "------", "---------------"}
-
+   local aa = {}
+   local msg = "Top "..tostring(n).." jobs"
    for i = 1,n do
-      local su = fmt:format(a[i].su)
-      b[#b+1] = {a[i].name, su, tostring(a[i].num),a[i].id,tostring(a[i].numUsers)}
+      aa[i] = a[i]
    end
-   local bt = BeautifulTbl:new{tbl=b}
-   bt:printTbl();
 
-   for i = 1, #a do
-      print(i,",",a[i].su)
+   displayExecT(aa,msg)
+
+   if (execFile and isFile(execFile) ) then
+      assert(loadfile(execFile))()
+
+      aa = {}
+      for i = 1, #a do
+         for j = 1, #execNameA do
+            if ( a[i].name:find(execNameA[j]) )then
+               aa[#aa+1] = a[i]
+            end
+         end
+      end
+
+      msg = "Report of jobs from execfile"
+      displayExecT(aa,msg)
    end
-      
 
 end
 function main()
@@ -239,7 +269,29 @@ function main()
 
    reportLibT(libT)   
 
-   reportTop(execT)
+   reportTop(execT, execFile)
+
+end
+function options()
+   local masterTbl = masterTbl()
+   local usage         = "Usage: moduleSymlink [options] pkgName pkgVersion"
+   local cmdlineParser = Optiks:new{usage=usage, version=Version}
+
+   cmdlineParser:add_option{ 
+      name    = {'-f','--execFile'},
+      dest    = 'execFile',
+      action  = 'store',
+      default = nil,
+      help    = "File containing a list of executables in a lua Table execNameA={}",
+   }
+
+
+   local optionTbl, pargs = cmdlineParser:parse(arg)
+
+   for v in pairs(optionTbl) do
+      masterTbl[v] = optionTbl[v]
+   end
+   masterTbl.pargs = pargs
 
 end
 
