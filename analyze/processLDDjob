@@ -229,6 +229,10 @@ function main()
                  system  = {num= 0, su= 0},
    }
 
+   options()
+   local masterTbl  = masterTbl()
+   local pargs      = masterTbl.pargs
+
    for userName, homeDir in processPWRec("/etc/passwd") do
       local dir = pathJoin(homeDir,".sge")
       if ( isDir(dir)) then
@@ -269,7 +273,7 @@ function main()
 
    reportLibT(libT)   
 
-   reportTop(execT, execFile)
+   reportTop(execT, masterTbl.execFile)
 
 end
 function options()
