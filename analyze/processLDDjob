@@ -15,6 +15,7 @@ execNameA       = {}
 
 require("strict")
 local BeautifulTbl = require("BeautifulTbl")
+local Optiks       = require("Optiks")
 local master       = {}
 require("serializeTbl")
 require("string_split")
