@@ -169,11 +169,6 @@ function displayExecT(a, msg)
    local bt = BeautifulTbl:new{tbl=b}
    bt:printTbl();
 
-   for i = 1, #a do
-      print(i,",",a[i].su)
-   end
-      
-
 end
 
 function reportTop(execT, execFile)
@@ -190,6 +185,11 @@ function reportTop(execT, execFile)
    table.sort(a,function(x,y) return x.su > y.su end)
 
    local n = math.min(20,#a)
+   
+   for i = 1, #a do
+      print(i,",",a[i].su)
+   end
+      
 
    local aa = {}
    local msg = "Top "..tostring(n).." jobs"
@@ -214,6 +214,7 @@ function reportTop(execT, execFile)
       msg = "Report of jobs from execfile"
       displayExecT(aa,msg)
    end
+
 
 end
 function masterTbl()
@@ -255,8 +256,8 @@ function main()
          iuser = iuser + 1
          local j = floor(iuser/nusers*100)
          if ( j > fence) then
-            io.stdout:write("#")
-            io.stdout:flush()
+            io.stderr:write("#")
+            io.stderr:flush()
             fence = fence + unit
          end
          for file in lfs.dir(dir) do
