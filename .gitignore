@@ -8,3 +8,4 @@ config.status
 makefile
 core.*
 ibrun_t2.o*
+*.ldd.log
