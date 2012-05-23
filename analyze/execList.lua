@@ -5,7 +5,8 @@ execNameA = {
   "namd",
   "amber",
   "Amber",
-  "vasp"	
+  "vasp",
+  "desmond"	
 }
 
 
