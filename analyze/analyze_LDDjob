@@ -20,8 +20,8 @@ SOURCEME_ls4=sourceme
 
 eval MCLAY=\$MCLAY_$SYSHOST
 
-export LUA_PATH="$MCLAY"'/l/pkg/projectsLua/projectsLua/share/5.1/?.lua;;'
-export LUA_CPATH="$MCLAY"'/l/pkg/projectsLua/projectsLua/lib/5.1/?.so;;'
+export LUA_PATH="$MCLAY"'/l/pkg/luatools/luatools/share/5.1/?.lua;;'
+export LUA_CPATH="$MCLAY"'/l/pkg/luatools/luatools/lib/5.1/?.so;;'
 
 eval SOURCEME=\$SOURCEME_$SYSHOST
 
