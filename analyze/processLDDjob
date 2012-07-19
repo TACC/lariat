@@ -182,17 +182,38 @@ function reportTop(execT, execFile)
       a[#a+1] = {name=k, su=v.su, num=v.num, id=v.job.id, numUsers=icount}
    end
 
+   -- Report Top SU jobs
+
    table.sort(a,function(x,y) return x.su > y.su end)
 
    local n = math.min(20,#a)
    
-   for i = 1, #a do
-      print(i,",",a[i].su)
-   end
+   --for i = 1, #a do
+   --   print(i,",",a[i].su)
+   --end
       
 
    local aa = {}
-   local msg = "Top "..tostring(n).." jobs"
+   local msg = "Top "..tostring(n).." SU jobs"
+   for i = 1,n do
+      aa[i] = a[i]
+   end
+
+   displayExecT(aa,msg)
+
+   -- Report Top NUM jobs
+
+   table.sort(a,function(x,y) return x.num > y.num end)
+
+   local n = math.min(20,#a)
+   
+   --for i = 1, #a do
+   --   print(i,",",a[i].su)
+   --end
+      
+
+   local aa = {}
+   local msg = "Top "..tostring(n).." NUM jobs"
    for i = 1,n do
       aa[i] = a[i]
    end
