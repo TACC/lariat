@@ -9,3 +9,6 @@ makefile
 core.*
 ibrun_t2.o*
 *.ldd.log
+analyze/*.log
+analyze/*.txt
+
