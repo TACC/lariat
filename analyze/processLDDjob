@@ -148,7 +148,7 @@ function reportLibT(libT)
    
 
    local bt = BeautifulTbl:new{tbl=b}
-   bt:printTbl();
+   io.stdout:write(bt:build_tbl(),"\n");
 
 end
 
@@ -167,7 +167,7 @@ function displayExecT(a, msg)
       b[#b+1] = {a[i].name, su, tostring(a[i].num),a[i].id,tostring(a[i].numUsers)}
    end
    local bt = BeautifulTbl:new{tbl=b}
-   bt:printTbl();
+   io.stdout:write(bt:build_tbl(),"\n");
 
 end
 
