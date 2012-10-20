@@ -30,7 +30,7 @@ eval SOURCEME=\$SOURCEME_$SYSHOST
 module load lua
 
 startDate=2012/06/16
-nextDate=$(nextDate.lua $startDate)
+nextDate=$($MCLAY/w/ibwrapper/analyze/nextDate.lua $startDate)
 endDate=2012/10/19
 
 umask 022
@@ -38,7 +38,7 @@ umask 022
 while [ "$nextDate" != "$endDate" ]; do
 
   $MCLAY/w/ibwrapper/analyze/collectLariatData.lua --delete --masterDir=/scratch/projects/lariatData --date=$nextDate
-  nextDate=$(nextDate.lua $nextDate)
+  nextDate=$($MCLAY/w/ibwrapper/analyze/nextDate.lua $nextDate)
   t=$( echo " ( $RANDOM * 9 ) / 32768 " | bc -q )
   sleep $t
 
