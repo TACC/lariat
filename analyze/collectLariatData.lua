@@ -166,14 +166,6 @@ function options()
    local cmdlineParser = Optiks:new{usage=usage, version=Version}
 
    cmdlineParser:add_option{ 
-      name    = {'-f','--execFile'},
-      dest    = 'execFile',
-      action  = 'store',
-      default = nil,
-      help    = "File containing a list of executables in a lua Table execNameA={}",
-   }
-
-   cmdlineParser:add_option{ 
       name    = {'--date'},
       dest    = 'date',
       action  = 'store',
