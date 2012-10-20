@@ -17,7 +17,7 @@ require("strict")
 local BeautifulTbl = require("BeautifulTbl")
 local Optiks       = require("Optiks")
 local Version      = "1.4"
-local master       = {}
+local s_master     = {}
 require("serializeTbl")
 require("string_split")
 require("fileOps")
@@ -44,12 +44,14 @@ function processPWRec(fn)
      end
 end
 
-function dateToEpoch(s)
+function dateToEpoch(year, month, day)
 
    local t = { year = 0, month = 0, day=0, hour = 0, min = 0, sec = 0 }
 
-   t.year, t.month, t.day = s:match("(%d+)/(%d+)/(%d+)")
-   
+   t.year  = tonumber(year)
+   t.month = tonumber(month)
+   t.day   = tonumber(day)
+
    local epoch=tonumber(os.time(t))
 
    return epoch, epoch + 86400.0
@@ -58,7 +60,7 @@ end
 
 
 
-function processLuaRecord(fn, sgeT, accT, libT)
+function processLuaRecord(fn, sgeT)
    local f=io.open(fn, "r")
    if (f == nil) then return end
    local whole = f:read("*all")
@@ -72,39 +74,20 @@ function processLuaRecord(fn, sgeT, accT, libT)
    f()
 
    local jobID = userT.jobID
-   sgeT[jobID] = {}
+
+   local a = sgeT[jobID] or {}
+
+   local t = {}
    for k, v in pairs(userT) do
-      sgeT[jobID][k] = v
+      t[k] = v
    end
 
-   local su = userT.numCores * userT.runTime / 3600.0
-
-   local t = accT[userT.execType] or { num = 0, su = 0, user = {} }
-
-   t.num   = t.num + 1
-   t.su    = t.su  + su
-   t.user[userT.user] = (t.user[userT.user] or 0) + 1
-   accT[userT.execType] = t
-
-   local sizeT = userT.sizeT or {bss = 0}
-   local bss = tonumber(sizeT.bss or 0)
-   if (bss > largeBSS) then
-      accT.bss.num = accT.bss.num + 1
-      accT.bss.jobID[jobID] = {userT.user, bss/(1024*1024*1024)}
-   end
-
-   if (userT.execType:find("^system:")) then
-      accT.system.num = accT.system.num + 1
-      accT.system.su  = accT.system.su  + su
-   end
-
-   if (next(userT.pkgT) ~= nil ) then
-      recordLibT(su, userT.pkgT, libT)
-   end
+   a[#a+1] = t
+   sgeT[jobID] = a
 end
 
 function masterTbl()
-   return master
+   return s_master
 end
 
 function main()
@@ -129,12 +112,14 @@ function main()
       end
    end
    local nusers = iuser
-
+   local year, month, day = masterTbl.date:match("(%d+)/(%d+)/(%d+)")
    
-   local startTime, endTime = dateToEpoch(masterTbl.date)
+   local startTime, endTime = dateToEpoch(year,month,day)
 
    iuser = 0
-   for userName, homeDir in processPWRec("/etc/passwd") do
+   --for userName, homeDir in processPWRec("/etc/passwd") do
+      local userName= "mclay"
+      local homeDir = "/home1/00515/mclay"
       local dir = pathJoin(homeDir,".sge")
       if ( isDir(dir)) then
          iuser = iuser + 1
@@ -150,19 +135,28 @@ function main()
                local fnT = lsf.attributes(fn)
                if (startTime <= fnT.modification and fnT.modification < endTime) then
                   processLuaRecord(fn, sgeT)
+                  if (masterTbl.delete) then
+                     os.remove(fn)
+                  end
                end
             end
          end
-      end
+      --end
    end
-   io.stdout:write("\n")
 
    local s = serializeTbl{indent=true, name="sgeT", value=sgeT}
 
    --------------------------------
    -- Write out file here.
 
+   local path = pathJoin(masterTbl.masterDir,year,month)
+   mkdir_recursive(path)
 
+   local resultFn = pathJoin(path,year .."-".. month .."-".. day .. ".lua")
+   
+   f = io.open(resultFn,"w")
+   f:write(s)
+   f:close()
 end
 function options()
    local masterTbl = masterTbl()
@@ -178,13 +172,27 @@ function options()
    }
 
    cmdlineParser:add_option{ 
-      name    = {,'--date'},
+      name    = {'--date'},
       dest    = 'date',
       action  = 'store',
       default = nil,
       help    = "date in yyyy/mm/dd format",
    }
+   cmdlineParser:add_option{ 
+      name    = {'--masterDir'},
+      dest    = 'masterDir',
+      action  = 'store',
+      default = nil,
+      help    = "Master Root Directory",
+   }
 
+   cmdlineParser:add_option{ 
+      name    = {'--delete'},
+      dest    = 'delete',
+      action  = 'store_true',
+      default = false,
+      help    = "Delete lariat data file after processing",
+   }
 
    local optionTbl, pargs = cmdlineParser:parse(arg)
 
