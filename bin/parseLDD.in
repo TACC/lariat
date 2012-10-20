@@ -143,6 +143,7 @@ function main()
    -- Add command line options to userT
    userT.numCores   = getenv("NSLOTS") or "0"
    userT.numNodes   = getenv("NHOSTS") or "0"
+   userT.numThreads = getenv("OMP_NUM_THREADS") or "0"
    userT.account    = getenv("SGE_ACCOUNT") or "unknown"
    userT.jobID      = getenv("JOB_ID")      or "unknown"
    userT.user       = getenv("USER")        or "unknown"

@@ -44,6 +44,20 @@ function processPWRec(fn)
      end
 end
 
+function dateToEpoch(s)
+
+   local t = { year = 0, month = 0, day=0, hour = 0, min = 0, sec = 0 }
+
+   t.year, t.month, t.day = s:match("(%d+)/(%d+)/(%d+)")
+   
+   local epoch=tonumber(os.time(t))
+
+   return epoch, epoch + 86400.0
+
+end
+
+
+
 function processLuaRecord(fn, sgeT, accT, libT)
    local f=io.open(fn, "r")
    if (f == nil) then return end
@@ -116,7 +130,9 @@ function main()
    end
    local nusers = iuser
 
-   local activeT = {}
+   
+   local startTime, endTime = dateToEpoch(masterTbl.date)
+
    iuser = 0
    for userName, homeDir in processPWRec("/etc/passwd") do
       local dir = pathJoin(homeDir,".sge")
@@ -130,25 +146,22 @@ function main()
          end
          for file in lfs.dir(dir) do
             if (file:sub(-4,-1) == ".lua") then
-               local fn = pathJoin(dir,file)
-               activeT[userName] = (activeT[userName] or 0) + 1
-               numTimes = numTimes + 1
-               processLuaRecord(fn, sgeT, accT, libT)
-           end
+               local fn  = pathJoin(dir,file)
+               local fnT = lsf.attributes(fn)
+               if (startTime <= fnT.modification and fnT.modification < endTime) then
+                  processLuaRecord(fn, sgeT)
+               end
+            end
          end
       end
    end
    io.stdout:write("\n")
 
-   local s = serializeTbl{indent=true, name="accT", value=accT}
-   io.stdout:write("\n",s,"\n")
-               
-   local execT = {}
-   processExecT(sgeT,execT)
+   local s = serializeTbl{indent=true, name="sgeT", value=sgeT}
 
-   reportLibT(libT)   
+   --------------------------------
+   -- Write out file here.
 
-   reportTop(execT, masterTbl.execFile)
 
 end
 function options()
@@ -162,6 +175,14 @@ function options()
       action  = 'store',
       default = nil,
       help    = "File containing a list of executables in a lua Table execNameA={}",
+   }
+
+   cmdlineParser:add_option{ 
+      name    = {,'--date'},
+      dest    = 'date',
+      action  = 'store',
+      default = nil,
+      help    = "date in yyyy/mm/dd format",
    }
 
 
