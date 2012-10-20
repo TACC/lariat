@@ -161,7 +161,8 @@ function main()
 end
 function options()
    local masterTbl = masterTbl()
-   local usage         = "Usage: processLDDjob [options]"
+   local Version   = "1.0"
+   local usage         = "Usage: collectLariatData.lua [options]"
    local cmdlineParser = Optiks:new{usage=usage, version=Version}
 
    cmdlineParser:add_option{ 
