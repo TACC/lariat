@@ -18,6 +18,8 @@ require("capture")
 local BeautifulTbl = require("BeautifulTbl")
 local Optiks       = require("Optiks")
 local Version      = "1.4"
+local concatTbl    = table.concat
+local json         = require("json")
 local s_master     = {}
 require("serializeTbl")
 require("string_split")
@@ -114,13 +116,13 @@ function main()
    end
    local nusers = iuser
    local year, month, day = masterTbl.date:match("(%d+)/(%d+)/(%d+)")
+
    
    local startTime, endTime = dateToEpoch(year,month,day)
 
    iuser = 0
-   --for userName, homeDir in processPWRec("/etc/passwd") do
-      local userName= "mclay"
-      local homeDir = "/home1/00515/mclay"
+   local icount = 0
+   for userName, homeDir in processPWRec("/etc/passwd") do
       local dir = pathJoin(homeDir,".sge")
       if ( isDir(dir)) then
          iuser = iuser + 1
@@ -133,8 +135,9 @@ function main()
          for file in lfs.dir(dir) do
             if (file:sub(-4,-1) == ".lua") then
                local fn  = pathJoin(dir,file)
-               local fnT = lsf.attributes(fn)
+               local fnT = lfs.attributes(fn)
                if (startTime <= fnT.modification and fnT.modification < endTime) then
+                  icount = icount + 1
                   processLuaRecord(fn, sgeT)
                   if (masterTbl.delete) then
                      os.remove(fn)
@@ -142,22 +145,45 @@ function main()
                end
             end
          end
-      --end
+      end
    end
 
-   local s = serializeTbl{indent=true, name="sgeT", value=sgeT}
+   if (icount > 0) then      
+      local s = serializeTbl{indent=true, name="sgeT", value=sgeT}
 
-   --------------------------------
-   -- Write out file here.
+      --------------------------------
+      -- Write out file here.
 
-   local path = pathJoin(masterTbl.masterDir,year,month)
-   mkdir_recursive(path)
+      local path = pathJoin(masterTbl.masterDir,year,month)
+      mkdir_recursive(path)
 
-   local resultFn = pathJoin(path,year .."-".. month .."-".. day .. ".lua")
+      local n = {}
+      n[#n+1] = "lariatData-sgeT-"
+      n[#n+1] = year
+      n[#n+1] = "-"
+      n[#n+1] = month
+      n[#n+1] = "-"
+      n[#n+1] = day
+      
+      local name = concatTbl(n,"") 
+
+      local resultFn = pathJoin(path,name..".lua")
    
-   f = io.open(resultFn,"w")
-   f:write(s)
-   f:close()
+      local f = io.open(resultFn,"w")
+      f:write(s)
+      f:close()
+
+      ------------------------------------------------------------------------
+      -- Write out JSON file as well
+
+      resultFn = pathJoin(path,name..".json")
+   
+      f = io.open(resultFn,"w")
+      s = json.encode(sgeT)
+      f:write(s)
+      f:close()
+   end
+   io.stderr:write("\n")
 end
 function options()
    local masterTbl = masterTbl()
