@@ -14,6 +14,7 @@ local mod       = math.mod
 execNameA       = {}
 
 require("strict")
+require("capture")
 local BeautifulTbl = require("BeautifulTbl")
 local Optiks       = require("Optiks")
 local Version      = "1.4"
