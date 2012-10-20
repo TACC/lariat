@@ -86,7 +86,9 @@ function processLuaRecord(fn, sgeT)
    end
 
    a[#a+1] = t
-   sgeT[jobID] = a
+   if (jobID) then
+      sgeT[jobID] = a
+   end
 end
 
 function masterTbl()
