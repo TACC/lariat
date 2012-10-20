@@ -29,4 +29,8 @@ eval SOURCEME=\$SOURCEME_$SYSHOST
 
 module load lua
 
-$MCLAY/w/ibwrapper/analyze/collectLariatData.lua "$@"
+yesterday=$MCLAY/w/ibwrapper/analyze/yesterday.lua
+
+umask 022
+
+$MCLAY/w/ibwrapper/analyze/collectLariatData.lua --delete --date=$yesterday --masterDir=/scratch/lariatData

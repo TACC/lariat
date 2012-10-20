@@ -33,6 +33,8 @@ startDate=2012/06/16
 nextDate=$(nextDate.lua $startDate)
 endDate=2012/10/19
 
+umask 022
+
 while [ "$nextDate" != "$endDate" ]; do
 
   $MCLAY/w/ibwrapper/analyze/collectLariatData.lua --delete --masterDir=/scratch/projects/lariatData --date=$nextDate
