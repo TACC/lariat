@@ -93,7 +93,7 @@ function main()
          print(cmd)
       end
    end
-
+end
 function options()
    local masterTbl = masterTbl()
    local Version   = "1.0"
