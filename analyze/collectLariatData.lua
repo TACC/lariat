@@ -150,6 +150,7 @@ function main()
       end
    end
 
+   local name = "unknown"
    if (icount > 0) then      
       local s = serializeTbl{indent=true, name="sgeT", value=sgeT}
 
@@ -167,7 +168,7 @@ function main()
       n[#n+1] = "-"
       n[#n+1] = day
       
-      local name = concatTbl(n,"") 
+      name = concatTbl(n,"") 
 
       local resultFn = pathJoin(path,name..".lua")
    
@@ -186,6 +187,7 @@ function main()
       f:close()
    end
    io.stderr:write("\n")
+   io.stderr:write("Wrote ",icount, " to ",name,".{lua,json}\n")
 end
 function options()
    local masterTbl = masterTbl()

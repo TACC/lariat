@@ -29,7 +29,7 @@ eval SOURCEME=\$SOURCEME_$SYSHOST
 
 module load lua
 
-yesterday=$MCLAY/w/ibwrapper/analyze/yesterday.lua
+yesterday=$($MCLAY/w/ibwrapper/analyze/yesterday.lua)
 
 umask 022
 
