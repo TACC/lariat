@@ -19,9 +19,7 @@ local BeautifulTbl = require("BeautifulTbl")
 local Optiks       = require("Optiks")
 local Version      = "1.4"
 local concatTbl    = table.concat
-local json         = require("json")
 local s_master     = {}
-require("serializeTbl")
 require("string_split")
 require("fileOps")
 require("VarDump")
@@ -89,11 +87,10 @@ function main()
          a[#a+1] = pathJoin(homeDir,".sge") .. "/*.lua"
          a[#a+1] = targetDir
          local cmd = concatTbl(a," ")
-
-         print(cmd)
+         os.execute(cmd)
       end
    end
-
+end
 function options()
    local masterTbl = masterTbl()
    local Version   = "1.0"

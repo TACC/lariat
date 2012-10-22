@@ -125,24 +125,29 @@ function main()
    iuser = 0
    local icount = 0
    for userName, homeDir in processPWRec("/etc/passwd") do
-      local dir = pathJoin(homeDir,".sge")
-      if ( isDir(dir)) then
-         iuser = iuser + 1
-         local j = floor(iuser/nusers*100)
-         if ( j > fence) then
-            io.stderr:write("#")
-            io.stderr:flush()
-            fence = fence + unit
-         end
-         for file in lfs.dir(dir) do
-            if (file:sub(-4,-1) == ".lua") then
-               local fn  = pathJoin(dir,file)
-               local fnT = lfs.attributes(fn)
-               if (startTime <= fnT.modification and fnT.modification < endTime) then
-                  icount = icount + 1
-                  processLuaRecord(fn, sgeT)
-                  if (masterTbl.delete) then
-                     os.remove(fn)
+      local dirA = { pathJoin("/tmp/lariatData",userName,".sge"),
+                     pathJoin(homeDir,".sge")
+      }
+      for i = 1, 2 do
+         local dir = dirA[i]
+         if ( isDir(dir)) then
+            iuser = iuser + 1
+            local j = floor(iuser/nusers*100)
+            if ( j > fence) then
+               io.stderr:write("#")
+               io.stderr:flush()
+               fence = fence + unit
+            end
+            for file in lfs.dir(dir) do
+               if (file:sub(-4,-1) == ".lua") then
+                  local fn  = pathJoin(dir,file)
+                  local fnT = lfs.attributes(fn)
+                  if (startTime <= fnT.modification and fnT.modification < endTime) then
+                     icount = icount + 1
+                     processLuaRecord(fn, sgeT)
+                     if (masterTbl.delete) then
+                        os.remove(fn)
+                     end
                   end
                end
             end
