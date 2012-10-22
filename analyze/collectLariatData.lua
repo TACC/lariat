@@ -173,20 +173,20 @@ function main()
       n[#n+1] = "-"
       n[#n+1] = day
       
-      name = concatTbl(n,"") 
+      name = pathJoin(path,concatTbl(n,""))
 
-      local resultFn = pathJoin(path,name..".lua")
+      local resultFn = name..".lua"
    
-      local f = io.open(resultFn,"w")
+      local f = assert(io.open(resultFn,"w"))
       f:write(s)
       f:close()
 
       ------------------------------------------------------------------------
       -- Write out JSON file as well
 
-      resultFn = pathJoin(path,name..".json")
+      resultFn = name..".json"
    
-      f = io.open(resultFn,"w")
+      f = assert(io.open(resultFn,"w"))
       s = json.encode(sgeT)
       f:write(s)
       f:close()
