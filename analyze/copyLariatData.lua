@@ -83,7 +83,7 @@ function main()
          mkdir_recursive(targetDir)
 
          local a = {}
-         a[#a+1] = "cp"
+         a[#a+1] = "mv"
          a[#a+1] = pathJoin(homeDir,".sge") .. "/*.lua"
          a[#a+1] = targetDir
          local cmd = concatTbl(a," ")
