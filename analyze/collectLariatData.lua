@@ -110,13 +110,11 @@ function main()
    local masterTbl  = masterTbl()
    local pargs      = masterTbl.pargs
 
-   for userName, homeDir in processPWRec("/etc/passwd") do
-      local dir = pathJoin(homeDir,".sge")
-      if ( isDir(dir)) then
-         iuser = iuser + 1
-      end
-   end
-   local nusers = iuser
+
+   -- get number of user from number of lines in /etc/passwd
+   local line   = capture("wc -l /etc/passwd")
+   local nusers = line:match("(%d+)")
+
    local year, month, day = masterTbl.date:match("(%d+)/(%d+)/(%d+)")
 
    
@@ -125,19 +123,20 @@ function main()
    iuser = 0
    local icount = 0
    for userName, homeDir in processPWRec("/etc/passwd") do
+      iuser = iuser + 1
+      local j = floor(iuser/nusers*100)
+      if ( j > fence) then
+         io.stderr:write("#")
+         io.stderr:flush()
+         fence = fence + unit
+      end
+
       local dirA = { pathJoin("/tmp/lariatData",userName,".sge"),
                      pathJoin(homeDir,".sge")
       }
       for i = 1, 2 do
          local dir = dirA[i]
          if ( isDir(dir)) then
-            iuser = iuser + 1
-            local j = floor(iuser/nusers*100)
-            if ( j > fence) then
-               io.stderr:write("#")
-               io.stderr:flush()
-               fence = fence + unit
-            end
             for file in lfs.dir(dir) do
                if (file:sub(-4,-1) == ".lua") then
                   local fn  = pathJoin(dir,file)
