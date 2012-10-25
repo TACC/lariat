@@ -1,6 +1,11 @@
 #!/bin/bash
 # -*- shell-script -*-
 
+DELETE="--delete"
+if [ "$1" == "--save" ]; then
+   DELETE=""
+fi
+
 my_hostname=$(hostname -f)
 firstName=${my_hostname%%.*}
 secondName=${my_hostname#*.}
@@ -33,4 +38,4 @@ yesterday=$($MCLAY/w/ibwrapper/analyze/yesterday.lua)
 
 umask 022
 
-$MCLAY/w/ibwrapper/analyze/collectLariatData.lua --delete --date=$yesterday --masterDir=/scratch/projects/lariatData
+$MCLAY/w/ibwrapper/analyze/collectLariatData.lua $DELETE --date=$yesterday --masterDir=/scratch/projects/lariatData
