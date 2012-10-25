@@ -124,7 +124,7 @@ function main()
    local year, month, day = masterTbl.date:match("(%d+)/(%d+)/(%d+)")
 
 
-   activeJobT = activeJobs()
+   local activeJobT = activeJobs()
 
    
    local startTime, endTime = dateToEpoch(year,month,day)
