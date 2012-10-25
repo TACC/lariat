@@ -21,6 +21,7 @@ local Version      = "1.4"
 local concatTbl    = table.concat
 local json         = require("json")
 local s_master     = {}
+local ProgressBar  = require("ProgressBar")
 require("serializeTbl")
 require("string_split")
 require("fileOps")
@@ -103,12 +104,6 @@ end
 
 function main()
 
-   local numTimes = 0
-   local iuser = 0
-   local unit  = 2
-   local fence = unit
-   --------------------------------------------------------------
-   -- count number of active users
 
    local sgeT = {}
 
@@ -125,6 +120,7 @@ function main()
 
 
    local activeJobT = activeJobs()
+   local pb         = ProgressBar:new{stream = io.stderr, max = nusers, barWidth=100}
 
    
    local startTime, endTime = dateToEpoch(year,month,day)
@@ -133,12 +129,7 @@ function main()
    local icount = 0
    for userName, homeDir in processPWRec("/etc/passwd") do
       iuser = iuser + 1
-      local j = floor(iuser/nusers*100)
-      if ( j > fence) then
-         io.stderr:write("#")
-         io.stderr:flush()
-         fence = fence + unit
-      end
+      pb:progress(iuser)
 
       local dirA = { pathJoin("/tmp/lariatData",userName,".sge"),
                      pathJoin(homeDir,".sge")
@@ -162,6 +153,8 @@ function main()
          end
       end
    end
+
+   pb:fini()
 
    local name = "unknown"
    if (icount > 0) then      
@@ -199,7 +192,6 @@ function main()
       f:write(s)
       f:close()
    end
-   io.stderr:write("\n")
    io.stderr:write(string.format("Wrote %5d to %s.{lua,json}\n", icount, name))
 
 end
