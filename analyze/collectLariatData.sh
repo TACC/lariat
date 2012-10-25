@@ -33,4 +33,4 @@ yesterday=$($MCLAY/w/ibwrapper/analyze/yesterday.lua)
 
 umask 022
 
-$MCLAY/w/ibwrapper/analyze/collectLariatData.lua --delete --date=$yesterday --masterDir=/scratch/lariatData
+$MCLAY/w/ibwrapper/analyze/collectLariatData.lua --delete --date=$yesterday --masterDir=/scratch/projects/lariatData
