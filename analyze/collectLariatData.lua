@@ -125,7 +125,7 @@ function main()
    
    local startTime, endTime = dateToEpoch(year,month,day)
 
-   iuser = 0
+   local iuser = 0
    local icount = 0
    for userName, homeDir in processPWRec("/etc/passwd") do
       iuser = iuser + 1
