@@ -65,6 +65,7 @@ end
 
 
 function processLuaRecord(fn, activeJobT, sgeT)
+   local masterTbl  = masterTbl()
    local f=io.open(fn, "r")
    if (f == nil) then return end
    local whole = f:read("*all")
@@ -95,6 +96,9 @@ function processLuaRecord(fn, activeJobT, sgeT)
    a[#a+1] = t
    if (jobID) then
       sgeT[jobID] = a
+   end
+   if (masterTbl.delete) then
+      os.remove(fn)
    end
 end
 
@@ -144,9 +148,6 @@ function main()
                   if (fnT.modification < endTime) then
                      icount = icount + 1
                      processLuaRecord(fn, activeJobT, sgeT)
-                     if (masterTbl.delete) then
-                        os.remove(fn)
-                     end
                   end
                end
             end
