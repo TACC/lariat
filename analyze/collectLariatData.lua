@@ -63,7 +63,7 @@ end
 
 
 
-function processLuaRecord(fn, sgeT)
+function processLuaRecord(fn, activeJobT, sgeT)
    local f=io.open(fn, "r")
    if (f == nil) then return end
    local whole = f:read("*all")
@@ -77,6 +77,12 @@ function processLuaRecord(fn, sgeT)
    f()
 
    local jobID = userT.jobID
+
+   -- Ignore all active Jobs.
+   if (activeJobT[jobID]) then
+      return
+   end
+
 
    local a = sgeT[jobID] or {}
 
@@ -117,6 +123,9 @@ function main()
 
    local year, month, day = masterTbl.date:match("(%d+)/(%d+)/(%d+)")
 
+
+   activeJobT = activeJobs()
+
    
    local startTime, endTime = dateToEpoch(year,month,day)
 
@@ -141,9 +150,9 @@ function main()
                if (file:sub(-4,-1) == ".lua") then
                   local fn  = pathJoin(dir,file)
                   local fnT = lfs.attributes(fn)
-                  if (startTime <= fnT.modification and fnT.modification < endTime) then
+                  if (fnT.modification < endTime) then
                      icount = icount + 1
-                     processLuaRecord(fn, sgeT)
+                     processLuaRecord(fn, activeJobT, sgeT)
                      if (masterTbl.delete) then
                         os.remove(fn)
                      end
@@ -191,8 +200,30 @@ function main()
       f:close()
    end
    io.stderr:write("\n")
-   io.stderr:write("Wrote ",icount, " to ",name,".{lua,json}\n")
+   io.stderr:write(string.format("Wrote %5d to %s.{lua,json}\n", icount, name))
+
 end
+
+
+function activeJobs()
+   local t = {}
+
+   local whole = capture("showq | grep Running  | awk '{ print $1, $4, $6}'")
+
+   for line in whole:split("\n") do
+      local jobId, state, time = line:match("(%d+) (%s+) (.*)")
+      if (state == "Running" and time:sub(1,1) ~= "-") then
+         t[jobID] = 1
+      end
+   end
+
+   return t
+
+end
+
+
+
+
 function options()
    local masterTbl = masterTbl()
    local Version   = "1.0"

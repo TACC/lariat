@@ -475,6 +475,15 @@ fi
 
 echo "TACC: starting parallel tasks..."
 
+pe_fn=`mktemp $home_sge_dir/job.$JOB_ID.usage.XXXXXXXX`
+mv $pe_fn $pe_fn.lua
+pe_fn=$pe_fn.lua
+eval "pe_mapD=\$ADMIN_$SYSHOST"
+
+parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn $fullcmd "$@"
+
+cp $pe_fn $pe_fn.orig
+
 
 # Launch a job with mvapich2+MPD's mpiexec command
 if [ x"$MODE" == "xmvapich2_mpd" ]; then
@@ -511,11 +520,6 @@ fi
 
 pe_endTime=`date +%s`
 pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
-
-pe_fn=`mktemp $home_sge_dir/job.$JOB_ID.usage.XXXXXXXX`
-mv $pe_fn $pe_fn.lua
-pe_fn=$pe_fn.lua
-eval "pe_mapD=\$ADMIN_$SYSHOST"
 
 parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn $fullcmd "$@"
 

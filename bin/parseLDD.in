@@ -152,6 +152,7 @@ function main()
    userT.runTime    = masterTbl.runTime
    userT.exec       = execPath
    userT.execEpoch  = execEpoch
+   userT.cwd        = posix.getcwd()
    userT.execModify = os.date("%c",execEpoch)
 
    local HashSum = findInPath("sha1sum")
