@@ -11,6 +11,7 @@ package.path = cmd_dir .. "?.lua;" .. package.path
 
 require("strict")
 
+require("readRMap")
 require("capture")
 require("fileOps")
 require("serializeTbl")
@@ -30,8 +31,6 @@ ignoreT = {
    tacc_affinity     = 1,
    getmode_affinity  = 1,
 }
-
-reverseMapT = {}
 
 DirKeepPass1 = {
    "^/opt/apps/",
@@ -85,20 +84,7 @@ function main()
 
    -- open reverseMap file and read it in.
 
-   local reverseMapFn = pathJoin(masterTbl.reverseMapD,"reverseMapT.lua")
-   local rmF          = io.open(reverseMapFn,"r")
-   if (not rmF) then
-      reverseMapFn = pathJoin(masterTbl.reverseMapD,"reverseMapT.old.lua")
-      rmF          = io.open(reverseMapFn,"r")
-   end
-
-   if (rmF) then
-      local whole  = rmF:read("*all")
-      rmF:close()
-
-      assert(loadstring(whole))()
-   end
-
+   reverseMapT = readRMap(masterTbl.reverseMapD)
 
    -- find user command from command line.
 
