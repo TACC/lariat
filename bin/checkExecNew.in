@@ -171,9 +171,9 @@ function main()
    dbg.start("checkExec(\""..concatTbl(pargs,"\", \"").."\")")
 
 
-   for i = 1, #arg do
-      if (not ignoreT[arg[i]]) then
-         cmd = arg[i]
+   for i = 1, #parg do
+      if (not ignoreT[parg[i]]) then
+         cmd = parg[i]
          break;
       end
    end
