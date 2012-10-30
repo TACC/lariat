@@ -121,7 +121,7 @@ function matchExecWmodules(reverseMapT, ldd)
       end
    end
    
-
+   vardumpT{value=execT}
 
    ---if (not mpiN) then
    ---   return execT
