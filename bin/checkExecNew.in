@@ -39,19 +39,13 @@ function masterTbl()
    return s_master
 end
 
---function canonicalCompilerVersion(v)
---   v       = v or ""
---   v       = v:gsub("-[0-9]*","")
---   v       = compilerT[v] or v
---   local a = {}
---   for vv in v:split("%.") do
---      a[#a+1] = vv
---      if (#a == 2) then break end
---   end
---   return table.concat(a,".")
---end
-
-
+function regularize(value)
+   value = value:gsub("//+","/")
+   value = value:gsub("/%./","/")
+   value = value:gsub("/$","")
+   value = abspath(value)
+   return value
+end
 
 function findEnvVersions(mpiStack, compiler)
    local sysT = {mpi="unknown",comp="unknown"}
@@ -75,8 +69,6 @@ function findEnvVersions(mpiStack, compiler)
 
    s = concatTbl(a,"\n")
    assert(loadstring(s))()
-
-   --local scv = canonicalCompilerVersion(activeList[compiler])
    sysT.mpi  = mpiStack .."/"..tostring(activeList[mpiStack])
    sysT.comp = compiler .."/"..tostring(activeList[compiler])
 
@@ -96,63 +88,47 @@ function checkForMissingLibraries(ldd)
 
 end
 
-
-
-function matchExecWmodules(ldd)
-
-   local execT
-
-   local dbg = tonumber(getenv("TACC_IBWRAPPER_DEBUG") or 0)
-
-   local mpiN, libName, lib
-   for l in ldd:split("\n") do
-      for k,v in pairs(lib2mpiT) do
-         if (l:find(k)) then
-            lib = l
-            libName = k
-            if (dbg > 0) then
-               print ("lib:     ", lib)
-               print ("libName: ", libName)
-            end
-            for i = 1,#v do
-               local lib = v[i]
-               if (l:find(lib)) then
-                  mpiN = lib
-                  break
-               end
-            end
-            break
-         end
-      end
-      if (mpiN) then break end
-   end
-
-   if (not mpiN) then
-      return execT
-   end
-
-
-   lib = lib:gsub("/lib/" .. libName .. ".*","")
-   lib = lib:gsub("/lib/shared/" .. libName .. ".*","")
-
-   if (dbg > 0) then
-      print ("lib:",lib)
-   end
-
-   local pathA = {}
-
-   for p in lib:split("/") do
-      pathA[#pathA+1] = p
-   end
+function matchExecWmodules(reverseMapT, ldd)
 
    local execT = {}
-   execT.mpi  = pathA[#pathA-1] .."-".. pathA[#pathA]
 
-   local _,_,c,v = pathA[#pathA-2]:find("([a-zA-Z]*)-?(.*)")
-   v = v:gsub("-[0-9]*","")
-   v = v:gsub("_",".")
+   local dbg = Dbg:dbg()
+   dbg.start("matchExecWmodules(reverseMapT, ldd)")
+   
+   local libPathA = {}
+   for lib in ldd:split("\n") do
+      lib = lib:gsub(".*=> *","")
+      lib = lib:gsub("%(0x.*$","")
+      libPathA[#libPathA+1] = lib
+      dbg.print("Lib: ",lib,"\n")
+   end
 
-   execT.comp = tostring(c).."-"..tostring(v)
+   ---if (not mpiN) then
+   ---   return execT
+   ---end
+   ---
+   ---
+   ---lib = lib:gsub("/lib/" .. libName .. ".*","")
+   ---lib = lib:gsub("/lib/shared/" .. libName .. ".*","")
+   ---
+   ---if (dbg > 0) then
+   ---   print ("lib:",lib)
+   ---end
+   ---
+   ---local pathA = {}
+   ---
+   ---for p in lib:split("/") do
+   ---   pathA[#pathA+1] = p
+   ---end
+   ---
+   ---local execT = {}
+   ---execT.mpi  = pathA[#pathA-1] .."-".. pathA[#pathA]
+   ---
+   ---local _,_,c,v = pathA[#pathA-2]:find("([a-zA-Z]*)-?(.*)")
+   ---v = v:gsub("-[0-9]*","")
+   ---v = v:gsub("_",".")
+   ---
+   ---execT.comp = tostring(c).."-"..tostring(v)
    
    return execT
 end
@@ -217,9 +193,10 @@ function main()
 
    dbg.print("sysT.mpi: ",tostring(sysT.mpi), ", sysT.comp: ",tostring(sysT.comp),"\n")
 
-   --local execT = matchExecWmodules(ldd)
-   --
-   --dbg.print("execT.mpi: ",tostring(execT.mpi), ", execT.comp: ",tostring(execT.comp))
+   local execT = matchExecWmodules(reverseMapT,ldd)
+   
+   dbg.print("execT.mpi: ",tostring(execT.mpi), ", execT.comp: ",tostring(execT.comp))
+
    --
    --if (execT == nil) then
    --   dbg.fini()
