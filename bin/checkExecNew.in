@@ -32,6 +32,18 @@ ignoreLines = {
    "^MODULEPATH",
 }
    
+mpiT = {
+   mvapich  = 1,
+   mvapich2 = 1,
+   openmpi  = 1,
+   impi     = 1,
+}
+
+compilerT = {
+   intel  = 1,
+   gcc    = 1,
+   pgi    = 1,
+}
 
 
 activeList = {}
@@ -106,22 +118,36 @@ function matchExecWmodules(reverseMapT, ldd)
    end
 
    
+   pkgT = {}
+
    for i = 1, #libPathA do
       local dir, lib = splitFileName(libPathA[i])
       dbg.print("dir: ",dir, " lib: ", lib, "\n")
       local pkgInfo = reverseMapT[regularize(dir)]
       if (pkgInfo) then
          dbg.print("pkgInfo.pkg: ", pkgInfo.pkg,"\n")
-         local t            = execT[pkgInfo.pkg] or {}
+         local t            = pkgT[pkgInfo.pkg] or {}
          local libA         = t.libA or {}
          t.flavor           = pkgInfo.flavor
          libA[#libA+1]      = lib:trim()
          t.libA             = libA
-         execT[pkgInfo.pkg] = t
+         pkgT[pkgInfo.pkg] = t
       end
    end
    
-   vardumpT{value=execT}
+   
+   for k, v in pairs(pkgT) do
+      local mname, mversion = splitFileName(k)
+      if (mpiT[mname]) then
+         execT.mpi   = pathJoin(mname, mversion)
+         a           = {}
+         for i = 1, #v.flavor do
+            a[#a + 1] = v.flavor[i]:gsub("default:","")
+         end
+         execT.compA = a
+      end
+   end
+
 
    ---if (not mpiN) then
    ---   return execT
@@ -215,31 +241,40 @@ function main()
 
    local execT = matchExecWmodules(reverseMapT,ldd)
    
-   dbg.print("execT.mpi: ",tostring(execT.mpi), ", execT.comp: ",tostring(execT.comp),"\n")
+   dbg.print("execT.mpi: ",tostring(execT.mpi),"\n")
 
-   --
-   --if (execT == nil) then
-   --   dbg.fini()
-   --   return status
-   --end
-   --
-   --if (sysT.mpi ~= execT.mpi) then
-   --   io.stdout:write("******************************************************\n",
-   --                   " WARNING: Your MPI Environment is :       ",sysT.mpi,"\n",
-   --                   "          Your executable was built with: ",execT.mpi,"\n",
-   --                   "******************************************************\n")
-   --   status = 1
-   --end      
-   --                   
-   --
-   --
-   --if (sysT.comp ~= execT.comp) then
-   --   io.stdout:write("******************************************************\n",
-   --                   " WARNING: Your Compiler Environment is :  ",sysT.comp,"\n",
-   --                   "          Your executable was built with: ",execT.comp,"\n",
-   --                   "******************************************************\n")
-   --   status = 1
-   --end
+   if (execT == nil) then
+      dbg.fini()
+      return status
+   end
+   
+   if (sysT.mpi ~= execT.mpi) then
+      io.stdout:write("******************************************************\n",
+                      " WARNING: Your MPI Environment is :       ",sysT.mpi,"\n",
+                      "          Your executable was built with: ",execT.mpi,"\n",
+                      "******************************************************\n")
+      status = 1
+   end      
+                      
+   
+   local found = false
+   for i = 1, #execT.compA do
+      if (sysT.comp == execT.compA[i] ) then
+         found = true
+         break
+      end
+   end
+   
+
+   
+   if (not found ) then
+      compStr = concatTbl(execT.compA, " or ")
+      io.stdout:write("******************************************************\n",
+                      " WARNING: Your Compiler Environment is :  ",sysT.comp,"\n",
+                      "          Your executable was built with: ",compStr,"\n",
+                      "******************************************************\n")
+      status = 1
+   end
    dbg.fini()
    return status
 end
