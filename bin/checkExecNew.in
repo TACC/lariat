@@ -109,7 +109,7 @@ function matchExecWmodules(reverseMapT, ldd)
    for i = 1, #libPathA do
       local dir, lib = splitFileName(libPathA[i])
       dbg.print("dir: ",dir, " lib: ", lib, "\n")
-      local pkgInfo = reverseMapT[dir]
+      local pkgInfo = reverseMapT[regularize(dir)]
       if (pkgInfo) then
          dbg.print("pkgInfo.pkg: ", pkgInfo.pkg,"\n")
          local t            = execT[pkgInfo.pkg] or {}
