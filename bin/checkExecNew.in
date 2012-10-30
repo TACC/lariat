@@ -14,7 +14,7 @@ require("strict")
 require("string_split")
 require("fileOps")
 require("capture")
-require("readRmap")
+require("readRMap")
 local Dbg       = require("Dbg")
 local getenv    = os.getenv
 local concatTbl = table.concat
