@@ -15,6 +15,7 @@ require("string_split")
 require("fileOps")
 require("capture")
 require("readRMap")
+require("VarDump")
 local Dbg       = require("Dbg")
 local Optiks    = require("Optiks")
 local getenv    = os.getenv
@@ -99,9 +100,27 @@ function matchExecWmodules(reverseMapT, ldd)
    for lib in ldd:split("\n") do
       lib = lib:gsub(".*=> *","")
       lib = lib:gsub("%(0x.*$","")
+      lib = regularize(lib)
       libPathA[#libPathA+1] = lib
       dbg.print("Lib: ",lib,"\n")
    end
+
+   
+   for i = 1, #libPathA do
+      local dir, lib = splitFileName(libPathA[i])
+      local pkgInfo = reverseMapT[dir]
+      if (pkgInfo) then
+         local t            = execT[pkgInfo.pkg] or {}
+         local libA         = t.libA or {}
+         t.flavor           = pkgInfo.flavor
+         libA[#libA+1]      = lib:trim()
+         t.libA             = libA
+         execT[pkgInfo.pkg] = t
+      end
+   end
+   
+   varDumpT(execT)
+
 
    ---if (not mpiN) then
    ---   return execT
@@ -195,7 +214,7 @@ function main()
 
    local execT = matchExecWmodules(reverseMapT,ldd)
    
-   dbg.print("execT.mpi: ",tostring(execT.mpi), ", execT.comp: ",tostring(execT.comp))
+   dbg.print("execT.mpi: ",tostring(execT.mpi), ", execT.comp: ",tostring(execT.comp),"\n")
 
    --
    --if (execT == nil) then
