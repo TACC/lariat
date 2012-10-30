@@ -15,8 +15,10 @@ require("string_split")
 require("fileOps")
 require("capture")
 require("readRmap")
-local getenv = os.getenv
+local Dbg       = require("Dbg")
+local getenv    = os.getenv
 local concatTbl = table.concat
+s_master        = {}
 ignoreT = {
    tacc_affinity     = 1,
    getmode_affinity  = 1,
@@ -38,6 +40,10 @@ ignoreLines = {
 
 
 activeList = {}
+
+function masterTbl()
+   return s_master
+end
 
 function canonicalCompilerVersion(v)
    v       = v or ""
@@ -77,8 +83,8 @@ function findEnvVersions(mpiStack, compiler)
    assert(loadstring(s))()
 
    local scv = canonicalCompilerVersion(activeList[compiler])
-   sysT.mpi  = mpiStack .."-"..tostring(activeList[mpiStack])
-   sysT.comp = compiler .."-"..scv
+   sysT.mpi  = mpiStack .."/"..tostring(activeList[mpiStack])
+   sysT.comp = compiler .."/"..tostring(activeList[compiler])
 
    return sysT
 end
@@ -159,9 +165,17 @@ end
 
 function main()
 
-   local dbg = tonumber(getenv("TACC_IBWRAPPER_DEBUG") or 0)
+   options()
+   local cmd       = "unknown"
+   local masterTbl = masterTbl()
+   local pargs     = masterTbl.pargs
+   if (masterTbl.debug or getenv("TACC_IBWRAPPER_DEBUG")) then
+      dbg:activateDebug(1)
+   end
+   local dbg       = Dbg:dbg()
+   
+   dbg.start("checkExec(\""..concatTbl(pargs,"\", \"").."\")")
 
-   local cmd="unknown"
 
    for i = 1, #arg do
       if (not ignoreT[arg[i]]) then
@@ -177,11 +191,12 @@ function main()
       io.stdout:write("******************************************************\n",
                       "Could not find: \"",tostring(cmd),"\" in your PATH\n",
                       "******************************************************\n")
+      dbg.fini()
       return 1
    end
 
 
-   local reverseMapT = read
+   local reverseMapT = readRMap(masterTbl.reverseMapD)
 
    local ldd = capture("ldd "..execPath)
 
@@ -189,6 +204,7 @@ function main()
       io.stdout:write("******************************************************\n",
                       " There are missing shared libraries \n",
                       "******************************************************\n")
+      dbg.fini()
       return 1
    end
       
@@ -199,44 +215,77 @@ function main()
    local sysT     = findEnvVersions(mpiStack, compiler)
    local status = 0
    if (sysT.mpi == "unknown") then
+      dbg.fini()
       return status
    end
 
-   if (dbg > 0) then
-      print("sysT:    ",sysT.mpi, sysT.comp)
-   end
+   
 
-   local execT = matchExecWmodules(ldd)
+   dbg.print("sysT.mpi: ",tostring(sysT.mpi), ", sysT.comp: ",tostring(sysT.comp))
 
-   if (execT == nil) then
-      if (dbg > 0) then
-         print ("no execT found")
-      end
-      return status
-   end
-
-   if (dbg > 0) then
-      print("execT:    ",execT.mpi, execT.comp)
-   end
-
-   if (sysT.mpi ~= execT.mpi) then
-      io.stdout:write("******************************************************\n",
-                      " WARNING: Your MPI Environment is :       ",sysT.mpi,"\n",
-                      "          Your executable was built with: ",execT.mpi,"\n",
-                      "******************************************************\n")
-      status = 1
-   end      
-                      
-
-
-   if (sysT.comp ~= execT.comp) then
-      io.stdout:write("******************************************************\n",
-                      " WARNING: Your Compiler Environment is :  ",sysT.comp,"\n",
-                      "          Your executable was built with: ",execT.comp,"\n",
-                      "******************************************************\n")
-      status = 1
-   end
+   --local execT = matchExecWmodules(ldd)
+   --
+   --dbg.print("execT.mpi: ",tostring(execT.mpi), ", execT.comp: ",tostring(execT.comp))
+   --
+   --if (execT == nil) then
+   --   dbg.fini()
+   --   return status
+   --end
+   --
+   --if (sysT.mpi ~= execT.mpi) then
+   --   io.stdout:write("******************************************************\n",
+   --                   " WARNING: Your MPI Environment is :       ",sysT.mpi,"\n",
+   --                   "          Your executable was built with: ",execT.mpi,"\n",
+   --                   "******************************************************\n")
+   --   status = 1
+   --end      
+   --                   
+   --
+   --
+   --if (sysT.comp ~= execT.comp) then
+   --   io.stdout:write("******************************************************\n",
+   --                   " WARNING: Your Compiler Environment is :  ",sysT.comp,"\n",
+   --                   "          Your executable was built with: ",execT.comp,"\n",
+   --                   "******************************************************\n")
+   --   status = 1
+   --end
+   dbg.fini()
    return status
+end
+
+function options()
+   local masterTbl = masterTbl()
+   local usage         = "Usage: checkExec [options] exec"
+   local cmdlineParser = Optiks:new{usage=usage, version=Version}
+
+   cmdlineParser:add_option{ 
+      name   = {'-v','--verbose'},
+      dest   = 'verbosityLevel',
+      action = 'count',
+   }
+
+   cmdlineParser:add_option{ 
+      name   = {'-d','--debug'},
+      dest   = 'debug',
+      action = 'store_true',
+   }
+
+
+   cmdlineParser:add_option{ 
+      name   = {'-m','--reverseMap', '--map'},
+      dest   = 'reverseMapD',
+      action = 'store',
+      help   = "reverseMap directory",
+   }
+
+
+   local optionTbl, pargs = cmdlineParser:parse(arg)
+
+   for v in pairs(optionTbl) do
+      masterTbl[v] = optionTbl[v]
+   end
+   masterTbl.pargs = pargs
+
 end
 
 local status = main()

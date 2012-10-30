@@ -203,7 +203,7 @@ end
 
 function options()
    local masterTbl = masterTbl()
-   local usage         = "Usage: moduleSymlink [options] pkgName pkgVersion"
+   local usage         = "Usage: parseLDD [options] exec"
    local cmdlineParser = Optiks:new{usage=usage, version=Version}
 
    cmdlineParser:add_option{ 
