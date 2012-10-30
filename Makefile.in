@@ -7,7 +7,7 @@ version         := $(shell . ./.build; echo $$PKG_VERSION)
 DIRLIST		:= $(DESTDIR)$(BIN)
 
 MAINDIR         := configure.ac Makefile.in configure
-STANDALONE_PRGM := bin/build_env.pl  bin/checkExec.in bin/checkExecNew.in bin/parseLDD.in  bin/getmode.sh  \
+STANDALONE_PRGM := bin/build_env.pl  bin/checkExec.in bin/parseLDD.in  bin/getmode.sh  \
                    bin/ibrun bin/tacc_affinity bin/tacc_rsh bin/readRMap.lua
 VDATE		:= $(shell date +'%F %H:%M')
 

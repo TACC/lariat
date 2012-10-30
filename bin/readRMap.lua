@@ -24,13 +24,6 @@ function readRMap(reverseMapD)
       assert(loadstring(whole))()
    end
 
-   local icount = 0
-   for k,v in pairs(reverseMapT) do
-      icount = icount + 1
-   end
-
-   dbg.print("Found ", icount, " entries\n")
-
    dbg.fini()
    return reverseMapT 
 
