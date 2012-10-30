@@ -24,13 +24,6 @@ ignoreT = {
    getmode_affinity  = 1,
 }
 
-mpiT = {
-   mvapich2 = 1
-   mvapich = 1
-   openmpi = 1
-   impi = 1
-}
-
 ignoreLines = {
    "^LMOD",
    "^export",
