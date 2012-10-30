@@ -163,10 +163,10 @@ function main()
    local cmd       = "unknown"
    local masterTbl = masterTbl()
    local pargs     = masterTbl.pargs
+   local dbg       = Dbg:dbg()
    if (masterTbl.debug or getenv("TACC_IBWRAPPER_DEBUG")) then
       dbg:activateDebug(1)
    end
-   local dbg       = Dbg:dbg()
    
    dbg.start("checkExec(\""..concatTbl(pargs,"\", \"").."\")")
 
