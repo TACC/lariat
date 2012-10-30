@@ -114,7 +114,6 @@ function matchExecWmodules(reverseMapT, ldd)
       lib = lib:gsub("%(0x.*$","")
       lib = regularize(lib)
       libPathA[#libPathA+1] = lib
-      dbg.print("Lib: ",lib,"\n")
    end
 
    
@@ -122,10 +121,8 @@ function matchExecWmodules(reverseMapT, ldd)
 
    for i = 1, #libPathA do
       local dir, lib = splitFileName(libPathA[i])
-      dbg.print("dir: ",dir, " lib: ", lib, "\n")
       local pkgInfo = reverseMapT[regularize(dir)]
       if (pkgInfo) then
-         dbg.print("pkgInfo.pkg: ", pkgInfo.pkg,"\n")
          local t            = pkgT[pkgInfo.pkg] or {}
          local libA         = t.libA or {}
          t.flavor           = pkgInfo.flavor
@@ -139,45 +136,18 @@ function matchExecWmodules(reverseMapT, ldd)
    for k, v in pairs(pkgT) do
       local mname, mversion = splitFileName(k)
       mname = mname:gsub("/$","")
-      dbg.print("mname: ",mname, " mversion: ", mversion,"\n")
       if (mpiT[mname]) then
          execT.mpi   = pathJoin(mname, mversion)
+         dbg.print("execT.mpi: ", execT.mpi,"\n")
          local a     = {}
          for i = 1, #v.flavor do
             a[#a + 1] = v.flavor[i]:gsub("default:","")
+            dbg.print("comp: ", a[#a],"\n")
          end
          execT.compA = a
       end
    end
 
-
-   ---if (not mpiN) then
-   ---   return execT
-   ---end
-   ---
-   ---
-   ---lib = lib:gsub("/lib/" .. libName .. ".*","")
-   ---lib = lib:gsub("/lib/shared/" .. libName .. ".*","")
-   ---
-   ---if (dbg > 0) then
-   ---   print ("lib:",lib)
-   ---end
-   ---
-   ---local pathA = {}
-   ---
-   ---for p in lib:split("/") do
-   ---   pathA[#pathA+1] = p
-   ---end
-   ---
-   ---local execT = {}
-   ---execT.mpi  = pathA[#pathA-1] .."-".. pathA[#pathA]
-   ---
-   ---local _,_,c,v = pathA[#pathA-2]:find("([a-zA-Z]*)-?(.*)")
-   ---v = v:gsub("-[0-9]*","")
-   ---v = v:gsub("_",".")
-   ---
-   ---execT.comp = tostring(c).."-"..tostring(v)
-   
    return execT
 end
 
