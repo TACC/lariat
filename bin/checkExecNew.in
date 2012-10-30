@@ -215,7 +215,7 @@ function main()
 
    
 
-   dbg.print("sysT.mpi: ",tostring(sysT.mpi), ", sysT.comp: ",tostring(sysT.comp))
+   dbg.print("sysT.mpi: ",tostring(sysT.mpi), ", sysT.comp: ",tostring(sysT.comp),"\n")
 
    --local execT = matchExecWmodules(ldd)
    --
