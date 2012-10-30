@@ -138,6 +138,7 @@ function matchExecWmodules(reverseMapT, ldd)
    
    for k, v in pairs(pkgT) do
       local mname, mversion = splitFileName(k)
+      mname = mname:gsub("/$","")
       dbg.print("mname: ",mname, " mversion: ", mversion,"\n")
       if (mpiT[mname]) then
          execT.mpi   = pathJoin(mname, mversion)
