@@ -16,6 +16,7 @@ require("fileOps")
 require("capture")
 require("readRMap")
 local Dbg       = require("Dbg")
+local Optiks    = require("Optiks")
 local getenv    = os.getenv
 local concatTbl = table.concat
 s_master        = {}
