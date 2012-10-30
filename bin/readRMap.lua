@@ -1,6 +1,6 @@
 require("strict")
 require("fileOps")
-require("Dbg")
+local Dbg = require("Dbg")
 
 reverseMapT = {}
 
