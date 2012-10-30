@@ -142,7 +142,7 @@ function matchExecWmodules(reverseMapT, ldd)
       dbg.print("mname: ",mname, " mversion: ", mversion,"\n")
       if (mpiT[mname]) then
          execT.mpi   = pathJoin(mname, mversion)
-         a           = {}
+         local a     = {}
          for i = 1, #v.flavor do
             a[#a + 1] = v.flavor[i]:gsub("default:","")
          end
