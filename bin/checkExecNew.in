@@ -240,7 +240,7 @@ function main()
 
    
    if (not found ) then
-      compStr = concatTbl(execT.compA, " or ")
+      local compStr = concatTbl(execT.compA, " or ")
       io.stdout:write("******************************************************\n",
                       " WARNING: Your Compiler Environment is :  ",sysT.comp,"\n",
                       "          Your executable was built with: ",compStr,"\n",
