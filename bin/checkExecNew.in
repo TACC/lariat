@@ -108,8 +108,10 @@ function matchExecWmodules(reverseMapT, ldd)
    
    for i = 1, #libPathA do
       local dir, lib = splitFileName(libPathA[i])
+      dbg.print("dir: ",dir, " lib: ", lib, "\n")
       local pkgInfo = reverseMapT[dir]
       if (pkgInfo) then
+         dbg.print("pkgInfo.pkg: ", pkgInfo.pkg,"\n")
          local t            = execT[pkgInfo.pkg] or {}
          local libA         = t.libA or {}
          t.flavor           = pkgInfo.flavor
@@ -119,7 +121,6 @@ function matchExecWmodules(reverseMapT, ldd)
       end
    end
    
-   vardumpT(execT)
 
 
    ---if (not mpiN) then
