@@ -39,17 +39,17 @@ function masterTbl()
    return s_master
 end
 
-function canonicalCompilerVersion(v)
-   v       = v or ""
-   v       = v:gsub("-[0-9]*","")
-   v       = compilerT[v] or v
-   local a = {}
-   for vv in v:split("%.") do
-      a[#a+1] = vv
-      if (#a == 2) then break end
-   end
-   return table.concat(a,".")
-end
+--function canonicalCompilerVersion(v)
+--   v       = v or ""
+--   v       = v:gsub("-[0-9]*","")
+--   v       = compilerT[v] or v
+--   local a = {}
+--   for vv in v:split("%.") do
+--      a[#a+1] = vv
+--      if (#a == 2) then break end
+--   end
+--   return table.concat(a,".")
+--end
 
 
 
@@ -76,7 +76,7 @@ function findEnvVersions(mpiStack, compiler)
    s = concatTbl(a,"\n")
    assert(loadstring(s))()
 
-   local scv = canonicalCompilerVersion(activeList[compiler])
+   --local scv = canonicalCompilerVersion(activeList[compiler])
    sysT.mpi  = mpiStack .."/"..tostring(activeList[mpiStack])
    sysT.comp = compiler .."/"..tostring(activeList[compiler])
 
