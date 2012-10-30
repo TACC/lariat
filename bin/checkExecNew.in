@@ -118,7 +118,7 @@ function matchExecWmodules(reverseMapT, ldd)
    end
 
    
-   pkgT = {}
+   local pkgT = {}
 
    for i = 1, #libPathA do
       local dir, lib = splitFileName(libPathA[i])
