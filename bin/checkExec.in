@@ -14,17 +14,16 @@ require("strict")
 require("string_split")
 require("fileOps")
 require("capture")
-local getenv = os.getenv
+require("readRMap")
+require("VarDump")
+local Dbg       = require("Dbg")
+local Optiks    = require("Optiks")
+local getenv    = os.getenv
 local concatTbl = table.concat
+s_master        = {}
 ignoreT = {
    tacc_affinity     = 1,
    getmode_affinity  = 1,
-}
-
-lib2mpiT =
-   {
-   ["libmpich%."] = { "/mvapich2/", "/mvapich/",},
-   ["libmpi%."]   = {"openmpi"},
 }
 
 ignoreLines = {
@@ -33,28 +32,26 @@ ignoreLines = {
    "^MODULEPATH",
 }
    
-
-compilerT = {
-   ['.12.1'] = "12",
-   ['12.1'] = "12",
+mpiT = {
+   mvapich  = 1,
+   mvapich2 = 1,
+   openmpi  = 1,
+   impi     = 1,
 }
-
 
 activeList = {}
 
-function canonicalCompilerVersion(v)
-   v       = v or ""
-   v       = v:gsub("-[0-9]*","")
-   v       = compilerT[v] or v
-   local a = {}
-   for vv in v:split("%.") do
-      a[#a+1] = vv
-      if (#a == 2) then break end
-   end
-   return table.concat(a,".")
+function masterTbl()
+   return s_master
 end
 
-
+function regularize(value)
+   value = value:gsub("//+","/")
+   value = value:gsub("/%./","/")
+   value = value:gsub("/$","")
+   value = abspath(value)
+   return value
+end
 
 function findEnvVersions(mpiStack, compiler)
    local sysT = {mpi="unknown",comp="unknown"}
@@ -78,10 +75,8 @@ function findEnvVersions(mpiStack, compiler)
 
    s = concatTbl(a,"\n")
    assert(loadstring(s))()
-
-   local scv  = canonicalCompilerVersion(activeList[compiler])
-   sysT.mpi  = mpiStack .."-"..tostring(activeList[mpiStack])
-   sysT.comp = compiler .."-"..scv
+   sysT.mpi  = mpiStack .."/"..tostring(activeList[mpiStack])
+   sysT.comp = compiler .."/"..tostring(activeList[compiler])
 
    return sysT
 end
@@ -99,76 +94,73 @@ function checkForMissingLibraries(ldd)
 
 end
 
-
-
-function matchExecWmodules(ldd)
-
-   local execT
-
-   local dbg = tonumber(getenv("TACC_IBWRAPPER_DEBUG") or 0)
-
-   local mpiN, libName, lib
-   for l in ldd:split("\n") do
-      for k,v in pairs(lib2mpiT) do
-         if (l:find(k)) then
-            lib = l
-            libName = k
-            if (dbg > 0) then
-               print ("lib:     ", lib)
-               print ("libName: ", libName)
-            end
-            for i = 1,#v do
-               local lib = v[i]
-               if (l:find(lib)) then
-                  mpiN = lib
-                  break
-               end
-            end
-            break
-         end
-      end
-      if (mpiN) then break end
-   end
-
-   if (not mpiN) then
-      return execT
-   end
-
-
-   lib = lib:gsub("/lib/" .. libName .. ".*","")
-   lib = lib:gsub("/lib/shared/" .. libName .. ".*","")
-
-   if (dbg > 0) then
-      print ("lib:",lib)
-   end
-
-   local pathA = {}
-
-   for p in lib:split("/") do
-      pathA[#pathA+1] = p
-   end
+function matchExecWmodules(reverseMapT, ldd)
 
    local execT = {}
-   execT.mpi  = pathA[#pathA-1] .."-".. pathA[#pathA]
 
-   local _,_,c,v = pathA[#pathA-2]:find("([a-zA-Z]*)-?(.*)")
-   v = v:gsub("-[0-9]*","")
-   v = v:gsub("_",".")
-
-   execT.comp = tostring(c).."-"..tostring(v)
+   local dbg = Dbg:dbg()
+   dbg.start("matchExecWmodules(reverseMapT, ldd)")
    
+   local libPathA = {}
+   for lib in ldd:split("\n") do
+      lib = lib:gsub(".*=> *","")
+      lib = lib:gsub("%(0x.*$","")
+      lib = regularize(lib)
+      libPathA[#libPathA+1] = lib
+   end
+
+   
+   local pkgT = {}
+
+   for i = 1, #libPathA do
+      local dir, lib = splitFileName(libPathA[i])
+      local pkgInfo = reverseMapT[regularize(dir)]
+      if (pkgInfo) then
+         local t            = pkgT[pkgInfo.pkg] or {}
+         local libA         = t.libA or {}
+         t.flavor           = pkgInfo.flavor
+         libA[#libA+1]      = lib:trim()
+         t.libA             = libA
+         pkgT[pkgInfo.pkg] = t
+      end
+   end
+   
+   
+   for k, v in pairs(pkgT) do
+      local mname, mversion = splitFileName(k)
+      mname = mname:gsub("/$","")
+      if (mpiT[mname]) then
+         execT.mpi   = pathJoin(mname, mversion)
+         dbg.print("execT.mpi: ", execT.mpi,"\n")
+         local a     = {}
+         for i = 1, #v.flavor do
+            a[#a + 1] = v.flavor[i]:gsub("default:","")
+            dbg.print("comp: ", a[#a],"\n")
+         end
+         execT.compA = a
+      end
+   end
+
    return execT
 end
 
 function main()
 
-   local dbg = tonumber(getenv("TACC_IBWRAPPER_DEBUG") or 0)
+   options()
+   local cmd       = "unknown"
+   local masterTbl = masterTbl()
+   local pargs     = masterTbl.pargs
+   local dbg       = Dbg:dbg()
+   if (masterTbl.debug or getenv("TACC_IBWRAPPER_DEBUG")) then
+      dbg:activateDebug(1)
+   end
+   
+   dbg.start("checkExec(\""..concatTbl(pargs,"\", \"").."\")")
 
-   local cmd="unknown"
 
-   for i = 1, #arg do
-      if (not ignoreT[arg[i]]) then
-         cmd = arg[i]
+   for i = 1, #pargs do
+      if (not ignoreT[pargs[i]]) then
+         cmd = pargs[i]
          break;
       end
    end
@@ -180,9 +172,12 @@ function main()
       io.stdout:write("******************************************************\n",
                       "Could not find: \"",tostring(cmd),"\" in your PATH\n",
                       "******************************************************\n")
+      dbg.fini()
       return 1
    end
 
+
+   local reverseMapT = readRMap(masterTbl.reverseMapD)
 
    local ldd = capture("ldd "..execPath)
 
@@ -190,6 +185,7 @@ function main()
       io.stdout:write("******************************************************\n",
                       " There are missing shared libraries \n",
                       "******************************************************\n")
+      dbg.fini()
       return 1
    end
       
@@ -200,26 +196,23 @@ function main()
    local sysT     = findEnvVersions(mpiStack, compiler)
    local status = 0
    if (sysT.mpi == "unknown") then
+      dbg.fini()
       return status
    end
 
-   if (dbg > 0) then
-      print("sysT:    ",sysT.mpi, sysT.comp)
-   end
+   
 
-   local execT = matchExecWmodules(ldd)
+   dbg.print("sysT.mpi: ",tostring(sysT.mpi), ", sysT.comp: ",tostring(sysT.comp),"\n")
+
+   local execT = matchExecWmodules(reverseMapT,ldd)
+   
+   dbg.print("execT.mpi: ",tostring(execT.mpi),"\n")
 
    if (execT == nil) then
-      if (dbg > 0) then
-         print ("no execT found")
-      end
+      dbg.fini()
       return status
    end
-
-   if (dbg > 0) then
-      print("execT:    ",execT.mpi, execT.comp)
-   end
-
+   
    if (sysT.mpi ~= execT.mpi) then
       io.stdout:write("******************************************************\n",
                       " WARNING: Your MPI Environment is :       ",sysT.mpi,"\n",
@@ -228,16 +221,63 @@ function main()
       status = 1
    end      
                       
+   
+   local found = false
+   for i = 1, #execT.compA do
+      if (sysT.comp == execT.compA[i] ) then
+         found = true
+         break
+      end
+   end
+   
 
-
-   if (sysT.comp ~= execT.comp) then
+   
+   if (not found ) then
+      local compStr = concatTbl(execT.compA, " or ")
       io.stdout:write("******************************************************\n",
                       " WARNING: Your Compiler Environment is :  ",sysT.comp,"\n",
-                      "          Your executable was built with: ",execT.comp,"\n",
+                      "          Your executable was built with: ",compStr,"\n",
                       "******************************************************\n")
       status = 1
    end
+   dbg.fini()
    return status
+end
+
+function options()
+   local masterTbl     = masterTbl()
+   local Version       = "1.6.2"
+   local usage         = "Usage: checkExec [options] exec"
+   local cmdlineParser = Optiks:new{usage=usage, version=Version}
+
+   cmdlineParser:add_option{ 
+      name   = {'-v','--verbose'},
+      dest   = 'verbosityLevel',
+      action = 'count',
+   }
+
+   cmdlineParser:add_option{ 
+      name   = {'-d','--debug'},
+      dest   = 'debug',
+      action = 'store_true',
+   }
+
+
+   cmdlineParser:add_option{ 
+      name   = {'-m','--reverseMap', '--map'},
+      dest   = 'reverseMapD',
+      action = 'store',
+      help   = "reverseMap directory",
+   }
+
+
+   local optionTbl, pargs = cmdlineParser:parse(arg)
+
+   for v in pairs(optionTbl) do
+      masterTbl[v] = optionTbl[v]
+   end
+   masterTbl.pargs = pargs
+
 end
 
 local status = main()
