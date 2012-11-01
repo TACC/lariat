@@ -15,7 +15,6 @@ require("string_split")
 require("fileOps")
 require("capture")
 require("readRMap")
-require("VarDump")
 local Dbg       = require("Dbg")
 local Optiks    = require("Optiks")
 local getenv    = os.getenv
