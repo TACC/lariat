@@ -25,12 +25,6 @@ ignoreT = {
    getmode_affinity  = 1,
 }
 
-ignoreLines = {
-   "^LMOD",
-   "^export",
-   "^MODULEPATH",
-}
-   
 mpiT = {
    mvapich  = 1,
    mvapich2 = 1,
@@ -53,30 +47,32 @@ function regularize(value)
 end
 
 function findEnvVersions(mpiStack, compiler)
-   local sysT = {mpi="unknown",comp="unknown"}
-   local lmod_cmd = getenv("LMOD_CMD")
-   if (lmod_cmd == nil) then return sysT end
-   local s        = capture(lmod_cmd .. " bash tablelist 2>&1 ")
+   local dbg   = Dbg:dbg()
+   dbg.start("findEnvVersions(",mpiStack,",", compiler,")")
+   local sysT  = {mpi="unknown",comp="unknown"}
+   local lmodA = {
+      getenv("LMOD_CMD"),
+      "/opt/apps/lmod/lmod/libexec/lmod",
+   }
 
-   local a = {}
-   for l in s:split("\n") do
-      local keep = true
-      for i = 1,#ignoreLines do
-         if (l:find(ignoreLines[i])) then
-            keep = false
-            break
-         end
-      end
-      if (keep) then
-         a[#a+1] = l
+   local lmod_cmd = nil
+
+   for i = 1, #lmodA do
+      if (lmodA[i] and isFile(lmodA[i])) then
+         lmod_cmd = lmodA[i]
+         break
       end
    end
+   
 
-   s = concatTbl(a,"\n")
+   if (lmod_cmd == nil) then return sysT end
+   local s        = capture("(" .. lmod_cmd .. " bash tablelist > /dev/null ) 2>&1 ")
+
    assert(loadstring(s))()
    sysT.mpi  = mpiStack .."/"..tostring(activeList[mpiStack])
    sysT.comp = compiler .."/"..tostring(activeList[compiler])
 
+   dbg.fini()
    return sysT
 end
 
@@ -139,7 +135,7 @@ function matchExecWmodules(reverseMapT, ldd)
          execT.compA = a
       end
    end
-
+   dbg.fini()
    return execT
 end
 
@@ -192,12 +188,14 @@ function main()
 
    local mpiStack = getenv("TACC_FAMILY_MPI")      or "unknown"
    local compiler = getenv("TACC_FAMILY_COMPILER") or "unknown"
+   dbg.print("mpiStack: ",mpiStack," compiler: ",compiler,"\n")
    local sysT     = findEnvVersions(mpiStack, compiler)
    local status = 0
    if (sysT.mpi == "unknown") then
       dbg.fini()
       return status
    end
+
 
    
 
