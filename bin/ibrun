@@ -47,6 +47,7 @@ ADMIN_stampede="/fixMe/fixMe"
 ADMIN_ranger="/share/moduleData/reverseMapD"
 ADMIN_ls4="/home1/moduleData/reverseMapD"
 ADMIN_longhorn="/share/tacc_admin/reverseMapD"
+eval "pe_mapD=\$ADMIN_$SYSHOST"
 CPN_stampede=16
 CPN_ranger=16
 CPN_ls4=12
@@ -400,7 +401,7 @@ if [ -n "$LMOD_CMD" ]; then
   export LMOD_CMD=$LMOD_CMD
 fi
 
-checkExec $cmd "$@"
+checkExec -m $pe_mapD $cmd "$@"
 
 # Double check the executable name specified to ibrun
 fullcmd=`which $cmd 2>/dev/null`
@@ -478,7 +479,6 @@ echo "TACC: starting parallel tasks..."
 pe_fn=`mktemp $home_sge_dir/job.$JOB_ID.usage.XXXXXXXX`
 mv $pe_fn $pe_fn.lua
 pe_fn=$pe_fn.lua
-eval "pe_mapD=\$ADMIN_$SYSHOST"
 
 parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn $fullcmd "$@"
 
