@@ -482,7 +482,6 @@ eval "pe_mapD=\$ADMIN_$SYSHOST"
 
 parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn $fullcmd "$@"
 
-cp $pe_fn $pe_fn.orig
 
 
 # Launch a job with mvapich2+MPD's mpiexec command
