@@ -23,6 +23,7 @@ s_master        = {}
 ignoreT = {
    tacc_affinity     = 1,
    getmode_affinity  = 1,
+   env               = 1,
 }
 
 mpiT = {
@@ -154,7 +155,7 @@ function main()
 
 
    for i = 1, #pargs do
-      if (not ignoreT[pargs[i]]) then
+      if (not (ignoreT[pargs[i]] or (pargs[i]:find("=")))) then
          cmd = pargs[i]
          break;
       end
@@ -205,12 +206,12 @@ function main()
    
    dbg.print("execT.mpi: ",tostring(execT.mpi),"\n")
 
-   if (execT == nil) then
+   if (execT == nil or execT.mpi == nil) then
       dbg.fini()
       return status
    end
    
-   if (sysT.mpi ~= execT.mpi) then
+   if (sysT.mpi ~= execT.mpi and sysT.mpi and execT.mpi) then
       io.stdout:write("******************************************************\n",
                       " WARNING: Your MPI Environment is :       ",sysT.mpi,"\n",
                       "          Your executable was built with: ",execT.mpi,"\n",
@@ -231,10 +232,12 @@ function main()
    
    if (not found ) then
       local compStr = concatTbl(execT.compA, " or ")
-      io.stdout:write("******************************************************\n",
-                      " WARNING: Your Compiler Environment is :  ",sysT.comp,"\n",
-                      "          Your executable was built with: ",compStr,"\n",
-                      "******************************************************\n")
+      if (sysT.comp and compStr) then
+         io.stdout:write("******************************************************\n",
+                         " WARNING: Your Compiler Environment is :  ",sysT.comp,"\n",
+                         "          Your executable was built with: ",compStr,"\n",
+                         "******************************************************\n")
+      end
       status = 1
    end
    dbg.fini()
