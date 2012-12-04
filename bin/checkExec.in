@@ -155,8 +155,9 @@ function main()
 
 
    for i = 1, #pargs do
-      if (not (ignoreT[pargs[i]] or (pargs[i]:find("=")))) then
-         cmd = pargs[i]
+      local arg = pargs[i]
+      if (not (ignoreT[arg] or arg:find("=") or arg:sub(1,1) == "-")) then
+         cmd = arg
          break;
       end
    end
