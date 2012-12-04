@@ -166,9 +166,6 @@ function main()
    local execPath = findInPath(cmd,path)
 
    if (execPath == "") then
-      io.stdout:write("******************************************************\n",
-                      "Could not find: \"",tostring(cmd),"\" in your PATH\n",
-                      "******************************************************\n")
       dbg.fini()
       return 1
    end
