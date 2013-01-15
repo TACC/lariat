@@ -25,7 +25,7 @@
 #---------------------------------------------------------
 
 $varenv = '';
-@env_exclude_list = qw(PWD PS1 HOME SSH_CLIENT SSH_CONNECTION HOST TERM SSH_AUTH_SOCK SSH_TTY SHLVL LSB_MCPU_HOSTS LSB_HOSTS LSF_PM_HOSTIDS LSB_EEXEC_REAL_GID LSB_JOBRES_PID INFOPATH _LMFILES_ LOADEDMODULES LOCAL_MODULES_DIR MODULEPATH _MODULESBEGINENV_ MODULESHOME  MODULE_VERSION MODULE_VERSION_STACK INCLUDE MANPATH  LESS_TERMCAP_mb LESS_TERMCAP_md LESS_TERMCAP_me LESS_TERMCAP_se LESS_TERMCAP_so LESS_TERMCAP_ue LESS_TERMCAP_us ARCHIVER REMOTEHOST XTERM_VERSION);
+@env_exclude_list = qw(PWD PS1 HOME SSH_CLIENT SSH_CONNECTION HOST TERM SSH_AUTH_SOCK SSH_TTY SHLVL LSB_MCPU_HOSTS LSB_HOSTS LSF_PM_HOSTIDS LSB_EEXEC_REAL_GID LSB_JOBRES_PID INFOPATH _LMFILES_ LOADEDMODULES LOCAL_MODULES_DIR MODULEPATH _MODULESBEGINENV_ MODULESHOME  MODULE_VERSION MODULE_VERSION_STACK INCLUDE MANPATH  LESS_TERMCAP_mb LESS_TERMCAP_md LESS_TERMCAP_me LESS_TERMCAP_se LESS_TERMCAP_so LESS_TERMCAP_ue LESS_TERMCAP_us ARCHIVER REMOTEHOST XTERM_VERSION SLURM_TASKS_PER_NODE SLURM_JOB_CPUS_PER_NODE SLURM_STEP_TASKS_PER_NODE SLURM_NODE_ALIASES SLURM_STEP_NODELIST SLURM_NODELIST);
 #$env_begin_with = '(^TACC_|^ICC_|^IFC_|^IDDB_|^CVS)';
  $env_begin_with =       '( ^ICC_|^IFC_|^IDDB_)';
 
@@ -39,7 +39,7 @@ foreach (@env_exclude_list) { $exclude{$_} = 1; }
 # don't propogate empty environment variables
 
 foreach (keys %ENV) {
-    unless ($exclude{$_} || $_ =~  /$env_begin_with/ || $ENV{$_} eq '' || $ENV{$_} =~ m/[ \n\t;*]/) { $varenv .= " $_=$ENV{$_} ";}
+    unless ($exclude{$_} || $_ =~  /$env_begin_with/ || $ENV{$_} eq '' || $ENV{$_} =~ m/[ \n\t;*]/) { $varenv .= " $_=\"$ENV{$_}\" ";}
 }
 
 # Report length of environment string, in the reported environment

@@ -75,6 +75,41 @@ function masterTbl()
    return master
 end
 
+
+
+
+function queueSystemMapper()
+   local queueType = "unknown"
+   local sysT      = {}
+
+   if (getenv("SGE_ACCOUNT"))then
+      queueType = "SGE"
+   elseif(getenv("SLURM_TACC_ACCOUNT"))then
+      queueType = "SLURM"
+   end
+
+   if (queueType == "SGE") then
+      sysT.numCores = "NSLOTS"
+      sysT.numNodes = "NHOSTS"
+      sysT.account  = "SGE_ACCOUNT"
+      sysT.jobID    = "JOB_ID"
+   end
+
+   if (queueType == "SLURM") then
+      sysT.numCores = "SLURM_TACC_CORES"
+      sysT.numNodes = "SLURM_NNODES"
+      sysT.account  = "SLURM_TACC_ACCOUNT"
+      sysT.jobID    = "SLURM_JOB_ID"
+   end
+
+   return sysT
+end
+
+      
+      
+
+
+
 function main()
 
    options()
@@ -124,15 +159,16 @@ function main()
       end
    end
 
+   local sysT = queueSystemMapper()
 
 
    -- Add command line options to userT
-   userT.numCores   = getenv("NSLOTS") or "0"
-   userT.numNodes   = getenv("NHOSTS") or "0"
    userT.numThreads = getenv("OMP_NUM_THREADS") or "0"
-   userT.account    = getenv("SGE_ACCOUNT") or "unknown"
-   userT.jobID      = getenv("JOB_ID")      or "unknown"
    userT.user       = getenv("USER")        or "unknown"
+   userT.numCores   = getenv(sysT.numCores) or "0"
+   userT.numNodes   = getenv(sysT.numNodes) or "0"
+   userT.account    = getenv(sysT.account)  or "unknown"
+   userT.jobID      = getenv(sysT.jobID)    or "unknown"
    userT.startTime  = os.date("%c",masterTbl.startTime)
    userT.startEpoch = masterTbl.startTime
    userT.runTime    = masterTbl.runTime
