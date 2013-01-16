@@ -15,10 +15,10 @@ myhost=${myhost%.tacc.utexas.edu}
 first=${myhost%%.*}
 SYSHOST=${myhost#*.}
 
-QUEUE_T=SGE
+QUEUE_T=sge
 
 if [ "$SYSHOST" = stampede ]; then
-  QUEUE_T=SLURM
+  QUEUE_T=slurm
 fi  
 
 cmdA=( "rm -rf $PKG"
