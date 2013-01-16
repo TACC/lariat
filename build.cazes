@@ -36,13 +36,13 @@ runMe()
 
 pkgName=ibwrapper
 
-BASE_DIR=$HOME/l/pkg
+BASE_DIR=$HOME/test_ibrun
 
 PKG=$BASE_DIR/$pkgName/$PKG_VERSION
 
 cmdA=( "rm -rf $PKG"
        "./configure --prefix=$PKG"
-       "make install"
+       "make QUEUE_T=slurm install "
       )
 
 
