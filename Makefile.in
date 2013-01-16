@@ -26,11 +26,6 @@ all:
 	@echo done
 
 install: $(DIRLIST) PRGMS PKGS
-	@for i in *.$(QUEUE_T); do       \
-	  fn=`basename $$i .$(QUEUE_T)`; \
-          echo ln -s $$i $$fn ;          \
-          ln -s $$i $$fn;                \
-	done
 
 $(DIRLIST) :
 	mkdir -p $@
@@ -60,6 +55,11 @@ $(REQUIRED):
 
 PRGMS: $(STANDALONE_PRGM)
 	$(MAKE) FILELIST="$^" DIRLOC=$(BIN)    __installMe
+	for i in $(DESTDIR)$(BIN)*.$(QUEUE_T); do       \
+	  fn=`basename $$i .$(QUEUE_T)`; \
+          echo ln -s $$i $$fn ;          \
+          ln -s $$i $$fn;                \
+	done
 
 makefile: Makefile.in config.status
 	config.status $@
