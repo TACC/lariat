@@ -36,7 +36,7 @@ runMe()
 
 pkgName=ibwrapper
 
-BASE_DIR=$HOME/test_ibrun
+BASE_DIR=$HOME/mclay
 
 PKG=$BASE_DIR/$pkgName/$PKG_VERSION
 
