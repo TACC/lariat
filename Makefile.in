@@ -56,9 +56,10 @@ $(REQUIRED):
 PRGMS: $(STANDALONE_PRGM)
 	$(MAKE) FILELIST="$^" DIRLOC=$(BIN)    __installMe
 	for i in $^; do       \
-	  if [[ $$i =~ .$(QUEUE_T) ]]; then \
-	    j=$(DESTDIR)$(BIN)$$i;          \
-            fn=`basename  $$j .$(QUEUE_T)`; \
+	  j=`basename $$i`
+	  if [[ $$j =~ .$(QUEUE_T) ]]; then \
+	    k=$(DESTDIR)$(BIN)$$j;          \
+            fn=`basename  $$k .$(QUEUE_T)`; \
             echo ln -s $$j $$fn ;           \
             ln -s $$j $$fn;                 \
           fi;                               \
