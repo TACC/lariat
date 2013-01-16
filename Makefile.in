@@ -55,10 +55,13 @@ $(REQUIRED):
 
 PRGMS: $(STANDALONE_PRGM)
 	$(MAKE) FILELIST="$^" DIRLOC=$(BIN)    __installMe
-	for i in $(DESTDIR)$(BIN)*.$(QUEUE_T); do       \
-	  fn=`basename $$i .$(QUEUE_T)`; \
-          echo ln -s $$i $$fn ;          \
-          ln -s $$i $$fn;                \
+	for i in $^; do       \
+	  if [[ $$i =~ .$(QUEUE_T) ]]; then \
+	    j=$(DESTDIR)$(BIN)$$i;          \
+            fn=`basename  $$j .$(QUEUE_T)`; \
+            echo ln -s $$j $$fn ;           \
+            ln -s $$j $$fn;                 \
+          fi;                               \
 	done
 
 makefile: Makefile.in config.status
