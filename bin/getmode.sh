@@ -48,6 +48,8 @@ else
   	builtin echo "mvapich1_ssh";;
       /opt/apps/*/mvapich2-debug/*)
   	builtin echo "mvapich2_ssh";;
+      /opt/apps/*/mvapich2/*)
+  	builtin echo "mvapich2_ssh";;
       /opt/apps/*/mvapich-new/*)
   	builtin echo "mvapich1_ssh";;
       /opt/apps/*/mvapich2/1.6)

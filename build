@@ -10,9 +10,20 @@ pkgName=ibwrapper
 
 PKG=$BASE_DIR/$pkgName/$PKG_VERSION
 
+myhost=$(hostname -f)
+myhost=${myhost%.tacc.utexas.edu}
+first=${myhost%%.*}
+SYSHOST=${myhost#*.}
+
+QUEUE_T=sge
+
+if [ "$SYSHOST" = stampede ]; then
+  QUEUE_T=slurm
+fi  
+
 cmdA=( "rm -rf $PKG"
        "./configure --prefix=$PKG"
-       "make install"
+       "make QUEUE_T=$QUEUE_T install"
       )
 
 

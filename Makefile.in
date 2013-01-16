@@ -8,7 +8,7 @@ DIRLIST		:= $(DESTDIR)$(BIN)
 
 MAINDIR         := configure.ac Makefile.in configure
 STANDALONE_PRGM := bin/build_env.pl  bin/checkExec.in bin/parseLDD.in  bin/getmode.sh  \
-                   bin/ibrun bin/tacc_affinity bin/tacc_rsh bin/readRMap.lua
+                   bin/ibrun.sge bin/ibrun.slurm bin/tacc_affinity bin/tacc_rsh bin/readRMap.lua
 VDATE		:= $(shell date +'%F %H:%M')
 
 REQUIRED_PKGS   :=                \
@@ -55,6 +55,14 @@ $(REQUIRED):
 
 PRGMS: $(STANDALONE_PRGM)
 	$(MAKE) FILELIST="$^" DIRLOC=$(BIN)    __installMe
+	for i in $^; do                            \
+	  j=`basename $$i`;                        \
+	  if [[ $$j =~ .$(QUEUE_T) ]]; then        \
+            fn=`basename  $$j .$(QUEUE_T)`;        \
+            echo ln -s $$j $(DESTDIR)$(BIN)/$$fn ; \
+            ln      -s $$j $(DESTDIR)$(BIN)/$$fn ; \
+          fi;                                      \
+	done
 
 makefile: Makefile.in config.status
 	config.status $@
