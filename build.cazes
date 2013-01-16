@@ -1,0 +1,49 @@
+#!/bin/bash
+# -*- shell-script -*-
+
+. ./.build
+
+runMe()
+{
+  local cmdA=("$@")
+
+  local j
+  local jj
+  local i
+  local ignoreError
+  local j=0
+  for i in "${cmdA[@]}" ; do
+    ignoreError=
+    if [ "x${i:0:1}" = x- ]; then
+      i=${i:1}
+      ignoreError=1
+    fi
+      
+    j=$((j+1))
+    jj=$(printf "%02d" $j)
+    echo
+    echo "%%---------------------------------%%"
+    echo "   " $jj: $i
+    echo "%%---------------------------------%%"
+    echo
+
+    eval $i
+    if [ -z "$ignoreError" -a $? != 0 ]; then
+      break
+    fi
+  done
+}
+
+pkgName=ibwrapper
+
+BASE_DIR=$HOME/l/pkg
+
+PKG=$BASE_DIR/$pkgName/$PKG_VERSION
+
+cmdA=( "rm -rf $PKG"
+       "./configure --prefix=$PKG"
+       "make install"
+      )
+
+
+runMe "${cmdA[@]}"
