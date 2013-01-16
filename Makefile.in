@@ -60,8 +60,8 @@ PRGMS: $(STANDALONE_PRGM)
 	  if [[ $$j =~ .$(QUEUE_T) ]]; then \
 	    k=$(DESTDIR)$(BIN)$$j;          \
             fn=`basename  $$k .$(QUEUE_T)`; \
-            echo ln -s $$j $$fn ;           \
-            ln -s $$j $$fn;                 \
+            echo ln -s $$k $$fn ;           \
+            ln -s $$k $$fn;                 \
           fi;                               \
 	done
 
