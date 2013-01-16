@@ -61,7 +61,7 @@ PRGMS: $(STANDALONE_PRGM)
 	    k=$(DESTDIR)$(BIN)/$$j;                \
             fn=`basename  $$k .$(QUEUE_T)`;        \
             echo ln -s $$k $(DESTDIR)$(BIN)/$$fn ; \
-            ln -s $$k $$fn;                        \
+            ln      -s $$k $(DESTDIR)$(BIN)/$$fn ; \
           fi;                                      \
 	done
 
