@@ -58,10 +58,9 @@ PRGMS: $(STANDALONE_PRGM)
 	for i in $^; do                            \
 	  j=`basename $$i`;                        \
 	  if [[ $$j =~ .$(QUEUE_T) ]]; then        \
-	    k=$(DESTDIR)$(BIN)/$$j;                \
-            fn=`basename  $$k .$(QUEUE_T)`;        \
-            echo ln -s $$k $(DESTDIR)$(BIN)/$$fn ; \
-            ln      -s $$k $(DESTDIR)$(BIN)/$$fn ; \
+            fn=`basename  $$j .$(QUEUE_T)`;        \
+            echo ln -s $$j $(DESTDIR)$(BIN)/$$fn ; \
+            ln      -s $$j $(DESTDIR)$(BIN)/$$fn ; \
           fi;                                      \
 	done
 
