@@ -185,6 +185,12 @@ if [ -n "$IBRUN_LD_PRELOAD" ]; then
 fi
 
 
+pe_fn=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.usage.XXXXXXXX`
+mv $pe_fn $pe_fn.lua
+pe_fn=$pe_fn.lua
+
+parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn $fullcmd "$@"
+
 if [ x"$MODE" == "xmvapich2_slurm" -o x"$MODE" == "xmvapich2_ssh" ]; then
 
     # Build hostfile for mvapich2 (with SLURM integeration) 
@@ -566,9 +572,6 @@ fi
 pe_endTime=`date +%s`
 pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
 
-pe_fn=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.usage.XXXXXXXX`
-mv $pe_fn $pe_fn.lua
-pe_fn=$pe_fn.lua
 eval "pe_mapD=\$ADMIN_$SYSHOST"
 parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn $fullcmd "$@"
 
