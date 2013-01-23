@@ -15,6 +15,8 @@ REQUIRED_PKGS   :=                \
 	           Dbg            \
                    Optiks         \
                    Optiks_Option  \
+                   TermWidth      \
+                   VarDump        \
 	           capture        \
 	           fileOps        \
                    pairsByKeys    \
@@ -22,7 +24,6 @@ REQUIRED_PKGS   :=                \
 	           strict         \
 	           string_split   \
 	           string_trim    \
-                   VarDump        \
 
 REQUIRED        := $(patsubst %, $(DESTDIR)$(BIN)/%.lua, $(REQUIRED_PKGS))
 
