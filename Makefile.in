@@ -17,6 +17,7 @@ REQUIRED_PKGS   :=                \
                    Optiks_Option  \
 	           capture        \
 	           fileOps        \
+                   pairsByKeys    \
 	           serializeTbl   \
 	           strict         \
 	           string_split   \
