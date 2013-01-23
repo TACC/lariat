@@ -79,7 +79,7 @@ end
 
 
 function queueSystemMapper()
-   local queueType = "unknown"
+   local queueType = "SLURM"
    local sysT      = {}
 
    if (getenv("SGE_ACCOUNT"))then
