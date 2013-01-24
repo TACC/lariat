@@ -12,8 +12,15 @@ STANDALONE_PRGM := bin/build_env.pl  bin/checkExec.in bin/parseLDD.in  bin/getmo
 VDATE		:= $(shell date +'%F %H:%M')
 
 REQUIRED_PKGS   :=                \
+                   BeautifulTbl   \
+	           Dbg            \
+                   Optiks         \
+                   Optiks_Option  \
+                   TermWidth      \
+                   VarDump        \
 	           capture        \
 	           fileOps        \
+                   pairsByKeys    \
 	           serializeTbl   \
 	           strict         \
 	           string_split   \
