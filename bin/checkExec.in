@@ -111,6 +111,8 @@ function matchExecWmodules(reverseMapT, ldd)
    for i = 1, #libPathA do
       local dir, lib = splitFileName(libPathA[i])
       local pkgInfo = reverseMapT[regularize(dir)]
+      local found   = (pkgInfo ~= nil)
+      dbg.print("libDir: ",regularize(dir)," found: ",tostring(found),"\n")
       if (pkgInfo) then
          local t            = pkgT[pkgInfo.pkg] or {}
          local libA         = t.libA or {}
@@ -124,6 +126,7 @@ function matchExecWmodules(reverseMapT, ldd)
    
    for k, v in pairs(pkgT) do
       local mname, mversion = splitFileName(k)
+      dbg.print("mod/version: ", pathJoin(mname, mversion),"\n")
       mname = mname:gsub("/$","")
       if (mpiT[mname]) then
          execT.mpi   = pathJoin(mname, mversion)
