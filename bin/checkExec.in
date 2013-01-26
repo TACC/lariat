@@ -175,7 +175,7 @@ function main()
    end
 
    if (masterTbl.reverseMapD == nil) then
-      masterTbl.reverseMapD = "/home1/moduleData/reverseMap"
+      masterTbl.reverseMapD = "/home1/moduleData/reverseMapD"
    end
 
 
