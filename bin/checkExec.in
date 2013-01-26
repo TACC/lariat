@@ -169,8 +169,13 @@ function main()
    local execPath = findInPath(cmd,path)
 
    if (execPath == "") then
+      dbg.print("Did not find location of command: ", cmd, "\n")
       dbg.fini()
       return 1
+   end
+
+   if (masterTbl.reverseMapD == nil) then
+      masterTbl.reverseMapD = "/home1/moduleData/reverseMap"
    end
 
 
