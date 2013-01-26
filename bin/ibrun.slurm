@@ -185,12 +185,6 @@ if [ -n "$IBRUN_LD_PRELOAD" ]; then
 fi
 
 
-pe_fn=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.usage.XXXXXXXX`
-mv $pe_fn $pe_fn.lua
-pe_fn=$pe_fn.lua
-
-parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn $fullcmd "$@"
-
 if [ x"$MODE" == "xmvapich2_slurm" -o x"$MODE" == "xmvapich2_ssh" ]; then
 
     # Build hostfile for mvapich2 (with SLURM integeration) 
@@ -443,8 +437,6 @@ if [ -n "$LMOD_CMD" ]; then
     export LMOD_CMD=$LMOD_CMD
 fi
 
-#####checkExec $cmd "$@"
-
 # Double check the executable name specified to ibrun
 fullcmd=`which $cmd 2>/dev/null`
 if [ $? -ne 0 ]; then
@@ -456,6 +448,16 @@ fi
 if [ -n "$TACC_IBWRAPPER_DEBUG" ]; then
     exit
 fi
+
+eval "pe_mapD=\$ADMIN_$SYSHOST"
+pe_fn=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.usage.XXXXXXXX`
+mv $pe_fn $pe_fn.lua
+pe_fn=$pe_fn.lua
+
+checkExec --map $pe_mapD $fullcmd "$@"
+
+parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn $fullcmd "$@"
+
 
 ## Modify $hostfile_tacc if user passed special options to ibrun
 
@@ -572,7 +574,6 @@ fi
 pe_endTime=`date +%s`
 pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
 
-eval "pe_mapD=\$ADMIN_$SYSHOST"
 parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn $fullcmd "$@"
 
 if [ $res -ne 0 ]; then
