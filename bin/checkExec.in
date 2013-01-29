@@ -254,7 +254,7 @@ function options()
    local masterTbl     = masterTbl()
    local Version       = "1.6.2"
    local usage         = "Usage: checkExec [options] exec"
-   local cmdlineParser = Optiks:new{usage=usage, version=Version}
+   local cmdlineParser = Optiks:new{usage=usage, version=Version, progName="checkExec"}
 
    cmdlineParser:add_option{ 
       name   = {'-v','--verbose'},
