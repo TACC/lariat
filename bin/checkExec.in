@@ -111,6 +111,8 @@ function matchExecWmodules(reverseMapT, ldd)
    for i = 1, #libPathA do
       local dir, lib = splitFileName(libPathA[i])
       local pkgInfo = reverseMapT[regularize(dir)]
+      local found   = (pkgInfo ~= nil)
+      dbg.print("libDir: ",regularize(dir)," found: ",tostring(found),"\n")
       if (pkgInfo) then
          local t            = pkgT[pkgInfo.pkg] or {}
          local libA         = t.libA or {}
@@ -124,6 +126,7 @@ function matchExecWmodules(reverseMapT, ldd)
    
    for k, v in pairs(pkgT) do
       local mname, mversion = splitFileName(k)
+      dbg.print("mod/version: ", pathJoin(mname, mversion),"\n")
       mname = mname:gsub("/$","")
       if (mpiT[mname]) then
          execT.mpi   = pathJoin(mname, mversion)
@@ -166,8 +169,13 @@ function main()
    local execPath = findInPath(cmd,path)
 
    if (execPath == "") then
+      dbg.print("Did not find location of command: ", cmd, "\n")
       dbg.fini()
       return 1
+   end
+
+   if (masterTbl.reverseMapD == nil) then
+      masterTbl.reverseMapD = "/home1/moduleData/reverseMapD"
    end
 
 
@@ -246,7 +254,7 @@ function options()
    local masterTbl     = masterTbl()
    local Version       = "1.6.2"
    local usage         = "Usage: checkExec [options] exec"
-   local cmdlineParser = Optiks:new{usage=usage, version=Version}
+   local cmdlineParser = Optiks:new{usage=usage, version=Version, progName="checkExec"}
 
    cmdlineParser:add_option{ 
       name   = {'-v','--verbose'},

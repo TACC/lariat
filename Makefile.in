@@ -13,8 +13,15 @@ STANDALONE_PRGM := bin/build_env.pl  bin/checkExec.in bin/parseLDD.in  bin/getmo
 VDATE		:= $(shell date +'%F %H:%M')
 
 REQUIRED_PKGS   :=                \
+                   BeautifulTbl   \
+	           Dbg            \
+                   Optiks         \
+                   Optiks_Option  \
+                   TermWidth      \
+                   VarDump        \
 	           capture        \
 	           fileOps        \
+                   pairsByKeys    \
 	           serializeTbl   \
 	           strict         \
 	           string_split   \
@@ -46,23 +53,23 @@ srcPkgs:
 	if [ -n "$^" ]; then cp $^ 
 
 $(REQUIRED):
-	if [ -f src/$(notdir $@) ]; then                                \
-          cp src/$(notdir $@) $(DESTDIR)$(BIN);                         \
-        else                                                            \
-	  f=`echo "$(notdir $@)" | sed -e 's/\.lua//'`;                 \
-          echo f: $$f;                                                  \
-          cp `findLuaPkgs $$f` $(DESTDIR)$(BIN);                        \
+	if [ -f src/$(notdir $@) ]; then                   \
+          cp src/$(notdir $@) $(DESTDIR)$(BIN);            \
+        else                                               \
+	  f=`echo "$(notdir $@)" | sed -e 's/\.lua//'`;    \
+          echo f: $$f;                                     \
+          cp `findLuaPkgs $$f` $(DESTDIR)$(BIN);           \
         fi
 
 PRGMS: $(STANDALONE_PRGM)
 	$(MAKE) FILELIST="$^" DIRLOC=$(BIN)    __installMe
-	for i in $^; do                            \
-	  j=`basename $$i`;                        \
-	  if [[ $$j =~ .$(QUEUE_T) ]]; then        \
-            fn=`basename  $$j .$(QUEUE_T)`;        \
-            echo ln -s $$j $(DESTDIR)$(BIN)/$$fn ; \
-            ln      -s $$j $(DESTDIR)$(BIN)/$$fn ; \
-          fi;                                      \
+	for i in $^; do                            	   \
+	  j=`basename $$i`;                        	   \
+	  if [[ $$j =~ .$(QUEUE_T) ]]; then        	   \
+            fn=`basename  $$j .$(QUEUE_T)`;        	   \
+            echo ln -s $$j $(DESTDIR)$(BIN)/$$fn ; 	   \
+            ln      -s $$j $(DESTDIR)$(BIN)/$$fn ; 	   \
+          fi;                                      	   \
 	done
 
 makefile: Makefile.in config.status

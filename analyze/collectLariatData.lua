@@ -116,6 +116,13 @@ function main()
    local pargs      = masterTbl.pargs
 
 
+   local squeueDir = ".sge"
+   if (masterTbl.slurm) then
+      squeueDir = ".slurm"
+   end
+   
+
+
    -- get number of user from number of lines in /etc/passwd
    local line   = capture("wc -l /etc/passwd")
    local nusers = line:match("(%d+)")
@@ -135,8 +142,8 @@ function main()
       iuser = iuser + 1
       pb:progress(iuser)
 
-      local dirA = { pathJoin("/tmp/lariatData",userName,".sge"),
-                     pathJoin(homeDir,".sge")
+      local dirA = { pathJoin("/tmp/lariatData",userName,squeueDir),
+                     pathJoin(homeDir,squeueDir),
       }
       for i = 1, 2 do
          local dir = dirA[i]
@@ -234,6 +241,14 @@ function options()
       name    = {'--masterDir'},
       dest    = 'masterDir',
       action  = 'store',
+      default = nil,
+      help    = "Master Root Directory",
+   }
+
+   cmdlineParser:add_option{ 
+      name    = {'--slurm'},
+      dest    = 'slurm',
+      action  = 'store_true',
       default = nil,
       help    = "Master Root Directory",
    }
