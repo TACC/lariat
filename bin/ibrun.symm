@@ -127,18 +127,13 @@ SCHEDULER=SLURM
 
         #Increment the task counter by the number of tasks on the mic
         let "task_count = $task_count + $MIC_PPN "
+
         let "node_index=$node_index+1"
       done
-      #Second set the number of tasks/node for this node and the task id 
-      # at which it starts
-#      node_tasks_ppn_info="${node_tasks_ppn_info}${tasks_ppn_cluster},${task_count}_"
-
-#      node_tasks_ppn_info="${node_tasks_ppn_info},${task_count}_"
-#      let "total_tasks_per_node_cluster = $node_count * $tasks_ppn_cluster"
-#      let "task_count = $task_count + $total_tasks_per_node_cluster "
     done
+    
+    #Export as an env variable to pass along to each task
     export NODE_TASKS_PPN_INFO="\"$node_tasks_ppn_info\""
-# echo "DEBUG:  ppn = ${pe_ppn} "
 
 echo "TACC: Starting up job $BATCH_JOB_ID"
 
