@@ -4,52 +4,43 @@
 # Stampede Symmetric ibrun
 #
 # ---------------------------------------------------------------------
-# set -x
-
-if [ "x$IBRUN_DEBUG" != "x" ]; then
-#DEBUG: export SLURM_TASKS_PER_NODE="16"
-#DEBUG: export SLURM_JOBID="90543"
-#DEBUG: export SLURM_NPROCS="64"
-#DEBUG: export SLURM_NODELIST=c402-[102-104,201]
-   export SLURM_TASKS_PER_NODE="16(x4)"
-   export SLURM_JOBID="90543"
-   export SLURM_NPROCS="64"
-   export SLURM_NODELIST=c402-[102-104,201]
-   export SLURM_TASKS_PER_NODE="6,5(x3)"
-   export SLURM_NPROCS=21
-fi
-
-CPN=16
-
-
-NUMCORES=$((CPN*2))
+#set -x
 
 ## Look through all the arguments to ibrun.  If the user asked for help (-h)
 ## print the help and then exit immediately.
-
-if [ "$1" == "-h" -o "$1" == "--help" -o "$1" == "-help" ]; then
-  ## User asked for a help message.  Exit after printing it.
-    echo "Basic Usage: "
-    echo "Set the number of tasks per mic with the environment variable"
-    echo "MIC_PPN(Default=4)"
-    echo "Set the number of threads per mic task with the environment variable"
-    echo "MIC_OMP_NUM_THREADS(Default=30)"
-    echo "Then use the $0 command:"
-    echo "$0 -m ./<mic_executable>  -c ./<cpu_executable> "
-    exit 0
-fi
 
 # echo "ARG1 = $1 "
 
 if [ "$1" != "-m" -a "$1" != "-c" ]; then
   ## User asked for a help message.  Exit after printing it.
-    echo "Basic Usage: "
-    echo "Set the number of tasks per mic with the environment variable"
-    echo "MIC_PPN(Default=4)"
-    echo "Set the number of threads per mic task with the environment variable"
-    echo "MIC_OMP_NUM_THREADS(Default=30)"
-    echo "Then use the $0 command:"
-    echo "$0 -m ./<mic_executable>  -c ./<cpu_executable> "
+    echo " "
+    echo "Usage: `basename $0` -m ./<mic_executable>  -c ./<cpu_executable> "
+    echo " "
+    echo "Set the number of tasks per mic with the environment variable."
+    echo "   MIC_PPN(Default=4)"
+    echo "Set the number of threads per mic task with the environment variable."
+    echo "   MIC_OMP_NUM_THREADS(Default=30)"
+    echo "Set the number of host threads."
+    echo "   OMP_NUM_THREADS(Default=1)"
+    echo "The number of host tasks and layout will correspond to the"
+    echo "  SLURM settings."
+    echo "To change the number of host tasks set MY_NSLOTS"
+    echo " "
+    echo "The total number of MPI tasks will be: "
+    echo " # of host tasks(set by SLURM) + (# of nodes x $MIC_PPN) "
+    echo " "
+    echo "Example: parallel environment -n 32 -N 4 "
+    echo " export MIC_PPN=2"
+    echo " export MIC_OMP_NUM_THREADS=60"
+    echo " export OMP_NUM_THREADS=2"
+    echo " ibrun.symm -m ./mpihello.mic -c ./mpihello.host "
+    echo " "
+    echo "This will start 8 mpi tasks on 4 nodes with 2 threads per host "
+    echo "task and 2 mpi tasks on 4 MIC cards with 60 threads per MIC task "
+    echo "resulting in 40 total mpi tasks. "
+    echo "Usage: `basename $0` -m ./<mic_executable>  -c ./<cpu_executable> "
+    echo " "
+    echo "Note:  ibrun.symm does not support the -n or -o arguments. "
     exit 0
 fi
 
@@ -78,6 +69,17 @@ done
 
 pe_startTime=`date +%s`
 
+# --------------------------------------------------------
+# Check for user provided MIC_PPN or MIC_MY_NSLOTS 
+#  and MIC_OMP_NUM_THREADS
+# --------------------------------------------------------
+if [ "x$MIC_MY_NSLOTS" == "x" -a "x$MIC_PPN" == "x" ]; then
+   MIC_PPN=4
+fi
+if [ x"$MIC_OMP_NUM_THREADS" == "x" ]; then
+   MIC_OMP_NUM_THREADS=30
+fi
+
 # Get the PE hostfile, number of slots and wayness from the environment
 
 SCHEDULER=SLURM
@@ -94,19 +96,46 @@ SCHEDULER=SLURM
     #                                         ^
     #No spaces are allowed in env variables that build_env.pl handles.
     # So, an "_" is used in place of a space.
+
+    #Initialize variables needed to setup node_tasks_ppn_info
     node_tasks_ppn_info=""
     task_count=0
+
+    #Loop over node clusters
     for nodes in ${node_clusters[@]}; do
+      #Get the number of tasks per node
       tasks_ppn_cluster=`echo $nodes | awk -F '(' '{print $1}'`
-      node_tasks_ppn_info="${node_tasks_ppn_info}${tasks_ppn_cluster}"
+
+      #Determine how many nodes are in this cluster, i.e. have the same number of 
+      # tasks/node 
       if [[ `echo $nodes | grep x` ]]; then
         node_count=`echo $nodes | sed -e's/.*x\([0-9]\+\).*/\1/'`
       else
        node_count=1
       fi
-      node_tasks_ppn_info="${node_tasks_ppn_info},${task_count}_"
-      let "total_tasks_per_node_cluster = $node_count * $tasks_ppn_cluster"
-      let "task_count = $task_count + $total_tasks_per_node_cluster "
+
+      #We have to set this up for each node when running with MIC
+      # Loop over the nodes in the node cluster
+      node_index=0
+      while [ $node_index -lt $node_count ]; do
+        #Set the number of tasks/node for this node and the task id 
+        # at which it starts
+        node_tasks_ppn_info="${node_tasks_ppn_info}${tasks_ppn_cluster},${task_count}_"
+
+        #Increment the task counter by the number of tasks per node
+        let "task_count = $task_count + $tasks_ppn_cluster "
+
+        #Increment the task counter by the number of tasks on the mic
+        let "task_count = $task_count + $MIC_PPN "
+        let "node_index=$node_index+1"
+      done
+      #Second set the number of tasks/node for this node and the task id 
+      # at which it starts
+#      node_tasks_ppn_info="${node_tasks_ppn_info}${tasks_ppn_cluster},${task_count}_"
+
+#      node_tasks_ppn_info="${node_tasks_ppn_info},${task_count}_"
+#      let "total_tasks_per_node_cluster = $node_count * $tasks_ppn_cluster"
+#      let "task_count = $task_count + $total_tasks_per_node_cluster "
     done
     export NODE_TASKS_PPN_INFO="\"$node_tasks_ppn_info\""
 # echo "DEBUG:  ppn = ${pe_ppn} "
@@ -137,9 +166,6 @@ fi
 hostfile_tacc=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.hostlist.XXXXXXXX`
 nslotsfile_tacc=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.info.XXXXXXXX`
 configfile_tacc=`mktemp $home_batch_dir/config_file.$BATCH_JOB_ID.XXXXXXXX`
-if [ "x$IBRUN_DEBUG" != "x" ]; then
-  configfile_tacc="./debug_config_file"
-fi
 
 # Just to be sure, remove the host and nslots files in case they
 # already exist.  This should never happen...
@@ -186,17 +212,6 @@ if [ x"$MY_NSLOTS" == "x" ]; then
     else
 	MY_NSLOTS=$NSLOTS_BATCH
     fi
-fi
-
-# --------------------------------------------------------
-# Check for user provided MIC_PPN or MIC_MY_NSLOTS 
-#  and MIC_OMP_NUM_THREADS
-# --------------------------------------------------------
-if [ "x$MIC_MY_NSLOTS" == "x" -a "x$MIC_PPN" == "x" ]; then
-   MIC_PPN=4
-fi
-if [ x"$MIC_OMP_NUM_THREADS" == "x" ]; then
-   MIC_OMP_NUM_THREADS=30
 fi
 
 
