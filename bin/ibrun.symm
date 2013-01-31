@@ -6,12 +6,7 @@
 # ---------------------------------------------------------------------
 #set -x
 
-## Look through all the arguments to ibrun.  If the user asked for help (-h)
-## print the help and then exit immediately.
-
-# echo "ARG1 = $1 "
-
-if [ "$1" != "-m" -a "$1" != "-c" ]; then
+function usage {
   ## User asked for a help message.  Exit after printing it.
     echo " "
     echo "Usage: `basename $0` -m ./<mic_executable>  -c ./<cpu_executable> "
@@ -38,14 +33,25 @@ if [ "$1" != "-m" -a "$1" != "-c" ]; then
     echo "This will start 8 mpi tasks on 4 nodes with 2 threads per host "
     echo "task and 2 mpi tasks on 4 MIC cards with 60 threads per MIC task "
     echo "resulting in 40 total mpi tasks. "
-    echo "Usage: `basename $0` -m ./<mic_executable>  -c ./<cpu_executable> "
     echo " "
     echo "Note:  ibrun.symm does not support the -n or -o arguments. "
+}
+
+## Look through all the arguments to ibrun.  If the user asked for help (-h)
+## print the help and then exit immediately.
+
+# echo "ARG1 = $1 "
+
+if [ "$1" != "-m" -a "$1" != "-c" ]; then
+    usage
     exit 0
 fi
 
 # Check for some command line switches before the executable
 stop_parsing=0
+
+mexec=""
+hexec=""
 
 while [ $stop_parsing -ne 1 ]
 do
@@ -63,6 +69,13 @@ do
 	*)
       ## Require at least -m or -c argument
             stop_parsing=1
+            if [ "x$mexec" == "x" -o "x$hexec" == "x" ]; then
+               echo " "
+               echo "Error:  You must use both the -m and -c flags."
+               echo " "
+               exit 1
+            fi
+            
 	    ;;
     esac
 done
@@ -116,6 +129,7 @@ SCHEDULER=SLURM
 
       #We have to set this up for each node when running with MIC
       # Loop over the nodes in the node cluster
+
       node_index=0
       while [ $node_index -lt $node_count ]; do
         #Set the number of tasks/node for this node and the task id 
@@ -405,6 +419,4 @@ fi
 echo " "
 echo "TACC: Shutdown complete. Exiting." 
 exit $res
-
-
 
