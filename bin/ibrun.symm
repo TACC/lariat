@@ -1,0 +1,400 @@
+#!/bin/bash
+# -*-sh-*-
+# ---------------------------------------------------------------------
+# Stampede Symmetric ibrun
+#
+# ---------------------------------------------------------------------
+# set -x
+
+if [ "x$IBRUN_DEBUG" != "x" ]; then
+#DEBUG: export SLURM_TASKS_PER_NODE="16"
+#DEBUG: export SLURM_JOBID="90543"
+#DEBUG: export SLURM_NPROCS="64"
+#DEBUG: export SLURM_NODELIST=c402-[102-104,201]
+   export SLURM_TASKS_PER_NODE="16(x4)"
+   export SLURM_JOBID="90543"
+   export SLURM_NPROCS="64"
+   export SLURM_NODELIST=c402-[102-104,201]
+   export SLURM_TASKS_PER_NODE="6,5(x3)"
+   export SLURM_NPROCS=21
+fi
+
+CPN=16
+
+
+NUMCORES=$((CPN*2))
+
+## Look through all the arguments to ibrun.  If the user asked for help (-h)
+## print the help and then exit immediately.
+
+if [ "$1" == "-h" -o "$1" == "--help" -o "$1" == "-help" ]; then
+  ## User asked for a help message.  Exit after printing it.
+    echo "Basic Usage: "
+    echo "Set the number of tasks per mic with the environment variable"
+    echo "MIC_PPN(Default=4)"
+    echo "Set the number of threads per mic task with the environment variable"
+    echo "MIC_OMP_NUM_THREADS(Default=30)"
+    echo "Then use the $0 command:"
+    echo "$0 -m ./<mic_executable>  -c ./<cpu_executable> "
+    exit 0
+fi
+
+# echo "ARG1 = $1 "
+
+if [ "$1" != "-m" -a "$1" != "-c" ]; then
+  ## User asked for a help message.  Exit after printing it.
+    echo "Basic Usage: "
+    echo "Set the number of tasks per mic with the environment variable"
+    echo "MIC_PPN(Default=4)"
+    echo "Set the number of threads per mic task with the environment variable"
+    echo "MIC_OMP_NUM_THREADS(Default=30)"
+    echo "Then use the $0 command:"
+    echo "$0 -m ./<mic_executable>  -c ./<cpu_executable> "
+    exit 0
+fi
+
+# Check for some command line switches before the executable
+stop_parsing=0
+
+while [ $stop_parsing -ne 1 ]
+do
+    case "$1" in
+	-m)
+	    shift
+	    mexec=$1
+	    shift
+	    ;;
+	-c)
+	    shift
+	    hexec=$1
+	    shift
+	    ;;
+	*)
+      ## Require at least -m or -c argument
+            stop_parsing=1
+	    ;;
+    esac
+done
+
+pe_startTime=`date +%s`
+
+# Get the PE hostfile, number of slots and wayness from the environment
+
+SCHEDULER=SLURM
+
+    BATCH_JOB_ID=$SLURM_JOBID
+    NSLOTS_BATCH=$SLURM_NPROCS
+    #Parse the SLURM_TASKS_PER_NODE string to get # of node clusters
+    # e.g.  6(2x),5(2x) -- 1st 2 nodes run 6 tasks, next 2 nodes run 5 tasks
+    declare -a node_clusters=(`echo $SLURM_TASKS_PER_NODE | sed -e's/,/ /g'`)
+#    echo "DEBUG: ${node_clusters[@]} "
+    #Set the wayness for each node cluster using one env
+    # Format of node_tasks_ppn_info = 
+    # "{# of tasks per node},{#initial task id}_[repeats if necessary]"
+    #                                         ^
+    #No spaces are allowed in env variables that build_env.pl handles.
+    # So, an "_" is used in place of a space.
+    node_tasks_ppn_info=""
+    task_count=0
+    for nodes in ${node_clusters[@]}; do
+      tasks_ppn_cluster=`echo $nodes | awk -F '(' '{print $1}'`
+      node_tasks_ppn_info="${node_tasks_ppn_info}${tasks_ppn_cluster}"
+      if [[ `echo $nodes | grep x` ]]; then
+        node_count=`echo $nodes | sed -e's/.*x\([0-9]\+\).*/\1/'`
+      else
+       node_count=1
+      fi
+      node_tasks_ppn_info="${node_tasks_ppn_info},${task_count}_"
+      let "total_tasks_per_node_cluster = $node_count * $tasks_ppn_cluster"
+      let "task_count = $task_count + $total_tasks_per_node_cluster "
+    done
+    export NODE_TASKS_PPN_INFO="\"$node_tasks_ppn_info\""
+# echo "DEBUG:  ppn = ${pe_ppn} "
+
+echo "TACC: Starting up job $BATCH_JOB_ID"
+
+srq_size=2048
+default_time_out=23
+
+# Find out which MPI stack we're using
+
+MODE=$TACC_MPI_GETMODE
+if [ -z $MODE ]; then
+    MODE=`getmode.sh`
+fi 
+
+# Set our files and directories
+
+home_batch_dir="$HOME/.slurm"
+
+if [ ! -d $home_batch_dir ]; then
+    mkdir -p $home_batch_dir
+fi
+
+# FYI: mktemp generates a filename with random numbers/letters
+# replacing the XXX
+
+hostfile_tacc=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.hostlist.XXXXXXXX`
+nslotsfile_tacc=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.info.XXXXXXXX`
+configfile_tacc=`mktemp $home_batch_dir/config_file.$BATCH_JOB_ID.XXXXXXXX`
+if [ "x$IBRUN_DEBUG" != "x" ]; then
+  configfile_tacc="./debug_config_file"
+fi
+
+# Just to be sure, remove the host and nslots files in case they
+# already exist.  This should never happen...
+
+if [ -f $nslotsfile_tacc ]; then
+    rm $nslotsfile_tacc
+fi
+
+if [ -f $hostfile_tacc ]; then
+    rm $hostfile_tacc
+fi
+
+if [ -f $configfile_tacc ]; then
+    rm $configfile_tacc
+fi
+
+# Set local LD_PRELOAD with DARSHAN
+if [ x$LD_PRELOAD == "x" ]; then
+    IBRUN_LD_PRELOAD=""
+else
+    IBRUN_LD_PRELOAD="$LD_PRELOAD"
+    unset LD_PRELOAD
+fi
+
+if [ x$TACC_DARSHAN_LIB != "x" ]; then
+    if [ x$IBRUN_LD_PRELOAD == "x" ]; then
+	IBRUN_LD_PRELOAD="${TACC_DARSHAN_FORTRAN_LIB}:${TACC_DARSHAN_LIB}"
+    else
+	IBRUN_LD_PRELOAD="${IBRUN_LD_PRELOAD}:${TACC_DARSHAN_FORTRAN_LIB}:${TACC_DARSHAN_LIB}"
+    fi
+fi
+
+if [ -n "$IBRUN_LD_PRELOAD" ]; then
+    MVAPICH_LD_PRELOAD="LD_PRELOAD=$IBRUN_LD_PRELOAD"
+    OPENMPI_LD_PRELOAD="-x LD_PRELOAD=$IBRUN_LD_PRELOAD"
+fi
+
+# ------------------------------
+# Check for user provided NSLOTS
+# ------------------------------
+if [ x"$MY_NSLOTS" == "x" ]; then
+    if [ -f $nslotsfile_tacc ]; then
+	MY_NSLOTS=`cat $nslotsfile_tacc`
+    else
+	MY_NSLOTS=$NSLOTS_BATCH
+    fi
+fi
+
+# --------------------------------------------------------
+# Check for user provided MIC_PPN or MIC_MY_NSLOTS 
+#  and MIC_OMP_NUM_THREADS
+# --------------------------------------------------------
+if [ "x$MIC_MY_NSLOTS" == "x" -a "x$MIC_PPN" == "x" ]; then
+   MIC_PPN=4
+fi
+if [ x"$MIC_OMP_NUM_THREADS" == "x" ]; then
+   MIC_OMP_NUM_THREADS=30
+fi
+
+
+if [ x"$MODE" == "xmvapich2_slurm" -o x"$MODE" == "xmvapich2_ssh" ]; then
+   echo "ERROR:  Mvapich2 module loaded"
+   echo "          ibrun.symm only works with Intel MPI at this time"
+   exit 1
+
+elif [ x"$MODE" == "ximpi_hydra" ]; then
+
+   #Ensure the env is setup for host/mic mpi
+   export I_MPI_FABRICS=shm:ofa
+   export I_MPI_MIC=1
+   export I_MPI_OFA_ADAPTER_NAME=mlx4_0
+#   export I_MPI_DEBUG=2
+
+   #Get a list of hosts
+   declare -a hostlist=(`scontrol show hostname $SLURM_NODELIST `)
+   if [ $? -ne 0  ];then
+      echo "TACC: Error -> slurm host list unavailable"
+      exit 1
+   fi
+
+   #Create a list of bridge hosts
+   declare -a br0_hostlist=(`scontrol show hostname $SLURM_NODELIST | sed -e's/$/-br0/'`)
+
+   #Create a list of mic hosts
+   #For now, only 1 mic per node
+   #We'll have to change this when we have 2 mic nodes
+   declare -a mic0_hostlist=(`scontrol show hostname $SLURM_NODELIST | sed -e's/$/-mic0/'`)
+#   declare -a mic1_hostlist=(`scontrol show hostname $SLURM_NODELIST | sed -e's/$/-mic1/'`)
+
+   #Set up the mic environment
+   if [ -z "${MIC_ENV_PREFIX}" ]; then
+     export MIC_ENV_PREFIX=MIC
+   fi
+   ENV_MIC=`env | grep -i ^${MIC_ENV_PREFIX}_ | egrep -v MIC_ENV_PREFIX | awk -vORS=' ' -v pfx=${MIC_ENV_PREFIX} -F= '{b=$1; a=substr($1,length(pfx)+2,length($1));  if (length($2) > 0 ) print " -env "a" "$2" "; }'`
+
+   #Set KMP_AFFINITY and I_MPI_PIN_MODE at the beginning of ENV_MIC
+   # If there are any user settings, e.g. MIC_KMP_AFFINITY, they will override these defaults
+   ENV_MIC="-env KMP_AFFINITY balanced -env I_MPI_PIN_MODE mpd $ENV_MIC"
+   
+
+#    echo "DEBUG: ${hostlist[@]} "
+
+   #Run using mpiexec.hydra
+   #Initialize the configfile
+   touch $configfile_tacc
+   echo "# Using command: mpiexec.hydra -configfile <config_file_name>"  >> $configfile_tacc 
+
+   #Initialize the hostlist index and populate the configfile
+   host_id=0
+   #Track # of tasks for MY_NSLOTS and flag to end host tasks
+   task_id=0
+   nslots_flag=0
+   #Build the hostlist using the SLURM_TASKS_PER_NODE syntax
+   for nodes in ${node_clusters[@]}; do
+     #Get the task count and node count for each node cluster
+     task_count=`echo $nodes | awk -F '(' '{print $1}'`
+     if [[ `echo $nodes | grep x` ]]; then
+       node_count=`echo $nodes | sed -e's/.*x\([0-9]\+\).*/\1/'`
+     else
+       node_count=1
+     fi
+#     echo "DEBUG: nodes=$nodes task_count=$task_count  node_count=$node_count"
+     if [ "x$hexec" != "x" ]; then
+       #Build the host list to match tasks per node
+       for i in `seq 0 $((node_count-1))`; do
+         #Build command for host
+         #First check to see if we exceed MY_NSLOTS
+         task_id=$((task_id+task_count))
+         if [ "$MY_NSLOTS" -lt "$task_id" ]; then  
+            task_count=$((task_count + MY_NSLOTS - task_id))
+         fi
+         if [ "$nslots_flag" -eq 0 ]; then  
+            echo " -n $task_count -host ${br0_hostlist[${host_id}]} $hexec "  >> $configfile_tacc 
+         fi
+         #Build command for mic
+         cmd=" $cmd -n $MIC_PPN -host ${mic0_hostlist[${host_id}]} $node "
+         cmd=" $cmd $ENV_MIC "
+         cmd=" $cmd $mexec "
+         echo "$cmd " >> $configfile_tacc 
+         cmd=""
+         #If we exceeded MY_NSLOTS -- don't set up any more host tasks
+         if [ "$MY_NSLOTS" -lt "$task_id" ]; then nslots_flag=1; fi  
+         ((host_id++))
+       done
+     fi
+
+   done
+
+   echo " " >> $configfile_tacc 
+   echo " " >> $configfile_tacc 
+
+
+   #Ensure the env is setup for host/mic mpi
+   export I_MPI_FABRICS=shm:ofa
+   export I_MPI_MIC=1
+   export I_MPI_OFA_ADAPTER_NAME=mlx4_0
+#   export I_MPI_DEBUG=2
+
+else
+    # Some other MPI stack? fail.
+    echo "TACC: Could not determine MPI stack. Exiting!"
+    exit 1
+fi
+
+#echo "TACC: Setup complete."
+
+#------------------------------
+# Let's finally launch the job
+#------------------------------
+
+## Do some error checking of the user's arguments to ibrun.
+res=0
+
+if [ -n "$LMOD_CMD" ]; then
+    export LMOD_CMD=$LMOD_CMD
+fi
+
+#####checkExec $cmd "$@"
+
+# Double check the executable name specified to ibrun
+fullcmd=`which $cmd 2>/dev/null`
+if [ $? -ne 0 ]; then
+#  echo "$cmd not found"
+#  exit 1
+    fullcmd="$cmd"
+fi
+
+if [ -n "$TACC_IBWRAPPER_DEBUG" ]; then
+    exit
+fi
+
+## Modify $hostfile_tacc if user passed special options to ibrun
+
+echo "TACC: Starting parallel tasks..."
+
+
+# Launch a job with mvapich2+MPD's mpiexec command
+if [ x"$MODE" == "ximpi_hydra" ]; then
+
+    #Run
+    echo  "  $MPICH_HOME/intel64/bin/mpiexec.hydra -configfile $configfile_tacc "
+   
+    $MPICH_HOME/intel64/bin/mpiexec.hydra -configfile $configfile_tacc
+    res=$?
+else
+    echo -e "TACC: Could not determine which MPI stack to use.\nTACC:Exiting.\n"
+    res=1
+fi
+
+
+pe_endTime=`date +%s`
+pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
+
+###pe_fn=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.usage.XXXXXXXX`
+###mv $pe_fn $pe_fn.lua
+###pe_fn=$pe_fn.lua
+###eval "pe_mapD=\$ADMIN_$SYSHOST"
+###parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn $fullcmd "$@"
+
+if [ $res -ne 0 ]; then
+    echo "TACC: MPI job exited with code: $res"
+fi
+
+
+#-----------------------
+# Job tear-down/cleanup
+#-----------------------
+
+###echo "TACC: Shutting down parallel environment."
+###
+###if [ x"$MODE" == "xmvapich2_mpd" ]; then
+###    mpdallexit 
+###elif [ x"$MODE" == "xmvapich1_ssh" -o x"$MODE" == "xmvapich2_ssh" ]; then
+###    /bin/true
+###elif [ x"$MODE" == "xmvapich1_devel_ssh" ]; then
+###    /bin/true
+###elif [ x"$MODE" == "xopenmpi_ssh" -o x"$MODE" == "xopenmpi_1.3_ssh" ]; then
+###    /bin/true
+###else
+###    echo "TACC: You should not see this message! Please contact TACC consulting and send us your jobscript."
+###    exit 1
+###fi
+
+if [ x"$TACC_KEEP_FILES" != "x" ]; then
+    if [ -f $nslotsfile_tacc ]; then
+	rm $nslotsfile_tacc
+    fi
+    if [ -f $hostfile_tacc ]; then
+	rm $hostfile_tacc
+    fi
+fi
+
+echo " "
+echo "TACC: Shutdown complete. Exiting." 
+exit $res
+
+
+
