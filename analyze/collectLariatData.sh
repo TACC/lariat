@@ -32,7 +32,7 @@ eval SOURCEME=\$SOURCEME_$SYSHOST
 
 . /root/$SOURCEME
 
-module load lua
+module try-add lua
 
 yesterday=$($MCLAY/w/ibwrapper/analyze/yesterday.lua)
 
