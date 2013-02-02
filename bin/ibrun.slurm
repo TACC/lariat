@@ -454,9 +454,9 @@ pe_fn=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.usage.XXXXXXXX`
 mv $pe_fn $pe_fn.lua
 pe_fn=$pe_fn.lua
 
-checkExec --map $pe_mapD $fullcmd "$@"
+checkExec --map $pe_mapD -- $fullcmd "$@"
 
-parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn $fullcmd "$@"
+parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $fullcmd "$@"
 
 
 ## Modify $hostfile_tacc if user passed special options to ibrun

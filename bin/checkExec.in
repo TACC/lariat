@@ -276,7 +276,6 @@ function options()
       help   = "reverseMap directory",
    }
 
-
    local optionTbl, pargs = cmdlineParser:parse(arg)
 
    for v in pairs(optionTbl) do
