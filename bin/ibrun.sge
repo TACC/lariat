@@ -401,7 +401,7 @@ if [ -n "$LMOD_CMD" ]; then
   export LMOD_CMD=$LMOD_CMD
 fi
 
-checkExec -m $pe_mapD $cmd "$@"
+checkExec -m $pe_mapD -- $cmd "$@"
 
 # Double check the executable name specified to ibrun
 fullcmd=`which $cmd 2>/dev/null`
@@ -480,7 +480,7 @@ pe_fn=`mktemp $home_sge_dir/job.$JOB_ID.usage.XXXXXXXX`
 mv $pe_fn $pe_fn.lua
 pe_fn=$pe_fn.lua
 
-parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn $fullcmd "$@"
+parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $fullcmd "$@"
 
 
 

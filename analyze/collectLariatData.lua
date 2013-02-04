@@ -115,13 +115,10 @@ function main()
    local masterTbl  = masterTbl()
    local pargs      = masterTbl.pargs
 
-
    local squeueDir = ".sge"
    if (masterTbl.slurm) then
       squeueDir = ".slurm"
    end
-   
-
 
    -- get number of user from number of lines in /etc/passwd
    local line   = capture("wc -l /etc/passwd")

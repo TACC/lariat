@@ -240,7 +240,7 @@ end
 function options()
    local masterTbl = masterTbl()
    local usage         = "Usage: parseLDD [options] exec"
-   local cmdlineParser = Optiks:new{usage=usage, version=Version}
+   local cmdlineParser = Optiks:new{usage=usage, version=Version, progName="parseLDD"}
 
    cmdlineParser:add_option{ 
       name   = {'-v','--verbose'},
@@ -275,9 +275,6 @@ function options()
       action = 'store',
       help   = "reverseMap directory",
    }
-
-  
-
 
    local optionTbl, pargs = cmdlineParser:parse(arg)
 
