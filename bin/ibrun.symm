@@ -67,15 +67,7 @@ do
 	    shift
 	    ;;
 	*)
-      ## Require at least -m or -c argument
             stop_parsing=1
-            if [ "x$mexec" == "x" -o "x$hexec" == "x" ]; then
-               echo " "
-               echo "Error:  You must use both the -m and -c flags."
-               echo " "
-               exit 1
-            fi
-            
 	    ;;
     esac
 done
@@ -276,17 +268,23 @@ elif [ x"$MODE" == "ximpi_hydra" ]; then
    #Track # of tasks for MY_NSLOTS and flag to end host tasks
    task_id=0
    nslots_flag=0
-   #Build the hostlist using the SLURM_TASKS_PER_NODE syntax
-   for nodes in ${node_clusters[@]}; do
-     #Get the task count and node count for each node cluster
-     task_count=`echo $nodes | awk -F '(' '{print $1}'`
-     if [[ `echo $nodes | grep x` ]]; then
-       node_count=`echo $nodes | sed -e's/.*x\([0-9]\+\).*/\1/'`
-     else
-       node_count=1
-     fi
-#     echo "DEBUG: nodes=$nodes task_count=$task_count  node_count=$node_count"
-     if [ "x$hexec" != "x" ]; then
+
+   #Only build the hostlist if there is a host executable
+   # It's not possible yet to run on multiple MIC's without
+   # at least one MPI task on the first host!
+   if [ "x$hexec" != "x" ]; then
+     #Build the hostlist using the SLURM_TASKS_PER_NODE syntax
+     for nodes in ${node_clusters[@]}; do
+
+       #Get the task count and node count for each node cluster
+       task_count=`echo $nodes | awk -F '(' '{print $1}'`
+       if [[ `echo $nodes | grep x` ]]; then
+         node_count=`echo $nodes | sed -e's/.*x\([0-9]\+\).*/\1/'`
+       else
+         node_count=1
+       fi
+#DEBUG       echo "DEBUG: nodes=$nodes task_count=$task_count  node_count=$node_count"
+
        #Build the host list to match tasks per node
        for i in `seq 0 $((node_count-1))`; do
          #Build command for host
@@ -299,28 +297,34 @@ elif [ x"$MODE" == "ximpi_hydra" ]; then
             echo " -n $task_count -host ${br0_hostlist[${host_id}]} $hexec "  >> $configfile_tacc 
          fi
          #Build command for mic
-         cmd=" $cmd -n $MIC_PPN -host ${mic0_hostlist[${host_id}]} $node "
-         cmd=" $cmd $ENV_MIC "
-         cmd=" $cmd $mexec "
-         echo "$cmd " >> $configfile_tacc 
+         if [ "x$mexec" != "x" ]; then
+           cmd=" $cmd -n $MIC_PPN -host ${mic0_hostlist[${host_id}]} "
+           cmd=" $cmd $ENV_MIC "
+           cmd=" $cmd $mexec "
+           echo "$cmd " >> $configfile_tacc 
+         fi
          cmd=""
          #If we exceeded MY_NSLOTS -- don't set up any more host tasks
          if [ "$MY_NSLOTS" -lt "$task_id" ]; then nslots_flag=1; fi  
          ((host_id++))
        done
-     fi
+     done
 
-   done
+   else
+   #Set up run for one mic card on first host
+     cmd=" $cmd -n $MIC_PPN -host ${mic0_hostlist[${host_id}]} "
+     cmd=" $cmd $ENV_MIC "
+     cmd=" $cmd $mexec "
+     echo "$cmd " >> $configfile_tacc 
+   fi
 
    echo " " >> $configfile_tacc 
-   echo " " >> $configfile_tacc 
-
 
    #Ensure the env is setup for host/mic mpi
    export I_MPI_FABRICS=shm:ofa
    export I_MPI_MIC=1
    export I_MPI_OFA_ADAPTER_NAME=mlx4_0
-#   export I_MPI_DEBUG=2
+#DEBUG   export I_MPI_DEBUG=2
 
 else
     # Some other MPI stack? fail.
