@@ -37,6 +37,22 @@ function usage {
     echo "Note:  ibrun.symm does not support the -n or -o arguments. "
 }
 
+nlocal=$(hostname -f)
+nA=($(builtin echo "$nlocal" | tr '.' ' '))
+first=${nA[0]}
+SYSHOST=${nA[1]}
+
+fqdn="$SYSHOST.tacc.utexas.edu"
+
+
+ADMIN_stampede="/home1/moduleData"
+ADMIN_ls4="/home1/moduleData"
+ADMIN_longhorn="/share/tacc_admin"
+eval "ADMIN_DIR=\$ADMIN_$SYSHOST"
+
+
+
+
 ## Look through all the arguments to ibrun.  If the user asked for help (-h)
 ## print the help and then exit immediately.
 
@@ -345,15 +361,15 @@ if [ -n "$LMOD_CMD" ]; then
     export LMOD_CMD=$LMOD_CMD
 fi
 
-#####checkExec $cmd "$@"
+pe_mapD="$ADMIN_DIR/reverseMapT"
 
-# Double check the executable name specified to ibrun
-fullcmd=`which $cmd 2>/dev/null`
-if [ $? -ne 0 ]; then
-#  echo "$cmd not found"
-#  exit 1
-    fullcmd="$cmd"
-fi
+pe_fn=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.usage.XXXXXXXX`
+mv $pe_fn $pe_fn.lua
+pe_fn=$pe_fn.lua
+
+checkExec --map $pe_mapD -- $hexec
+
+parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $hexec
 
 if [ -n "$TACC_IBWRAPPER_DEBUG" ]; then
     exit
@@ -381,11 +397,7 @@ fi
 pe_endTime=`date +%s`
 pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
 
-###pe_fn=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.usage.XXXXXXXX`
-###mv $pe_fn $pe_fn.lua
-###pe_fn=$pe_fn.lua
-###eval "pe_mapD=\$ADMIN_$SYSHOST"
-###parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn $fullcmd "$@"
+parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn $hexec
 
 if [ $res -ne 0 ]; then
     echo "TACC: MPI job exited with code: $res"

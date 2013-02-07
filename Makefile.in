@@ -73,7 +73,7 @@ PRGMS: $(STANDALONE_PRGM)
 	done
 
 makefile: Makefile.in config.status
-	config.status $@
+	./config.status $@
 
 config.status:
 	./config.status --recheck
