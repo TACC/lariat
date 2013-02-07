@@ -363,13 +363,15 @@ fi
 
 pe_mapD="$ADMIN_DIR/reverseMapT"
 
-pe_fn=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.usage.XXXXXXXX`
-mv $pe_fn $pe_fn.lua
-pe_fn=$pe_fn.lua
+if [ x$hexec != x ]; then
+  pe_fn=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.usage.XXXXXXXX`
+  mv $pe_fn $pe_fn.lua
+  pe_fn=$pe_fn.lua
 
-checkExec --map $pe_mapD -- $hexec
+  checkExec --map $pe_mapD -- $hexec
 
-parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $hexec
+  parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $hexec
+fi
 
 if [ -n "$TACC_IBWRAPPER_DEBUG" ]; then
     exit
@@ -394,10 +396,12 @@ else
 fi
 
 
-pe_endTime=`date +%s`
-pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
-
-parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn -- $hexec
+if [ x$hexec != x ]; then
+  pe_endTime=`date +%s`
+  pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
+  
+  parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn -- $hexec
+fi
 
 if [ $res -ne 0 ]; then
     echo "TACC: MPI job exited with code: $res"
