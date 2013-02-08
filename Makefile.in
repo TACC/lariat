@@ -5,11 +5,12 @@ BIN		:= $(prefix)/bin
 BUILD_VERSION   := .build
 version         := $(shell . ./.build; echo $$PKG_VERSION)
 DIRLIST		:= $(DESTDIR)$(BIN)
+GLOBAL_SRCS     := $(HOME)/a/global_sources/ibrun
 
 MAINDIR         := configure.ac Makefile.in configure
 STANDALONE_PRGM := bin/build_env.pl  bin/checkExec.in bin/parseLDD.in  bin/getmode.sh  \
-                   bin/ibrun.sge bin/ibrun.slurm bin/tacc_affinity.sge bin/tacc_rsh \
-                   bin/readRMap.lua bin/ibrun.symm
+                   bin/ibrun.sge bin/ibrun.slurm bin/tacc_affinity.sge                 \
+                   bin/readRMap.lua bin/ibrun.symm bin/tacc_affinity.slurm
 VDATE		:= $(shell date +'%F %H:%M')
 
 REQUIRED_PKGS   :=                \
@@ -35,31 +36,47 @@ all:
 
 install: $(DIRLIST) PRGMS PKGS
 
+
+global_sources: GS_PKGS GS_PRGMS
+
+GS_PKGS: 
+	cp `findLuaPkgs $(REQUIRED_PKGS)` $(GLOBAL_SRCS)
+
+GS_PRGMS: $(STANDALONE_PRGM)
+	$(MAKE) FILELIST="$^" DIRLOC=$(GLOBAL_SRCS)    __installMe
+	$(RM) $(GLOBAL_SRCS)/*.sge
+	mv $(GLOBAL_SRCS)/ibrun.slurm $(GLOBAL_SRCS)/ibrun
+	mv $(GLOBAL_SRCS)/tacc_affinity.slurm $(GLOBAL_SRCS)/tacc_affinity
+
+
 $(DIRLIST) :
 	mkdir -p $@
 
 __installMe:
 	-for i in $(FILELIST); do                                 \
-	  fn=`basename $$i .in`;                                  \
+          bareN=$${i##*/};                                        \
+          fn=$${bareN%%.in*};                                     \
+          ext=$${bareN#*.};                                       \
           sed -e 's|@PREFIX@|@prefix@|g'                          \
 	      -e 's|@path_to_lua@|$(PATH_TO_LUA)|g'               \
-              -e 's|@PKG@|$(PKG)|g'         < $$i > $$fn;         \
-          [ -n "$(DESTDIR)$(DIRLOC)" ] && mv $$fn $(DESTDIR)$(DIRLOC) && chmod +x $(DESTDIR)$(DIRLOC)/$$fn; \
+              -e 's|@PKG@|$(PKG)|g' < $$i > $(DIRLOC)/$$fn;       \
+          [ "$$ext" != "lua" ] &&              \
+             chmod +x $(DIRLOC)/$$fn;                             \
         done
 
 PKGS:   $(REQUIRED)
-
+	for i in $^; do                                      \
+	  if [ -f src/$(notdir $$i) ]; then                  \
+            cp src/$(notdir $$i) $(DESTDIR)$(BIN);           \
+          else                                               \
+	    f=`echo "$(notdir $$i)" | sed -e 's/\.lua//'`;   \
+            echo f: $$f;                                     \
+            cp `findLuaPkgs $$f` $(DESTDIR)$(BIN);           \
+          fi;                                                \
+	done
 srcPkgs: 
 	if [ -n "$^" ]; then cp $^ 
 
-$(REQUIRED):
-	if [ -f src/$(notdir $@) ]; then                   \
-          cp src/$(notdir $@) $(DESTDIR)$(BIN);            \
-        else                                               \
-	  f=`echo "$(notdir $@)" | sed -e 's/\.lua//'`;    \
-          echo f: $$f;                                     \
-          cp `findLuaPkgs $$f` $(DESTDIR)$(BIN);           \
-        fi
 
 PRGMS: $(STANDALONE_PRGM)
 	$(MAKE) FILELIST="$^" DIRLOC=$(BIN)    __installMe
