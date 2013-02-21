@@ -11,28 +11,40 @@ function usage {
     echo " "
     echo "Usage: `basename $0` -m ./<mic_executable>  -c ./<cpu_executable> "
     echo " "
-    echo "Set the number of tasks per mic with the environment variable."
-    echo "   MIC_PPN(Default=4)"
-    echo "Set the number of threads per mic task with the environment variable."
-    echo "   MIC_OMP_NUM_THREADS(Default=30)"
-    echo "Set the number of host threads."
-    echo "   OMP_NUM_THREADS(Default=1)"
-    echo "The number of host tasks and layout will correspond to the"
-    echo "  SLURM settings."
-    echo "To change the number of host tasks set MY_NSLOTS"
+    echo "MIC Environment Variables"
+    echo "MIC_PPN = # of MPI tasks per mic using MIC_PPN"
+    echo "   (Default=4)"
+    echo "MIC_OMP_NUM_THREADS = # of threads per mic MPI task"
+    echo "   (Default=30)"
     echo " "
-    echo "The total number of MPI tasks will be: "
-    echo " # of host tasks(set by SLURM) + (# of nodes x $MIC_PPN) "
+    echo "Host Environment Variables"
+    echo "The number of host MPI tasks and their layout will correspond"
+    echo "to the SLURM settings in the batch script.  However, the user "
+    echo "may override the SLURM setting with the MY_NSLOTS env variable."
     echo " "
-    echo "Example: parallel environment -n 32 -N 4 "
+    echo "MY_NSLOTS = total # of host MPI tasks"
+    echo "   (Default=\$SLURM_NTASKS)"
+    echo "OMP_NUM_THREADS = # of threads per host MPI task"
+    echo "   (Default=1)"
+    echo " "
+    echo " "
+    echo "Example: #SBATCH  -n 32 -N 4 "
     echo " export MIC_PPN=2"
     echo " export MIC_OMP_NUM_THREADS=60"
     echo " export OMP_NUM_THREADS=2"
     echo " ibrun.symm -m ./mpihello.mic -c ./mpihello.host "
     echo " "
-    echo "This will start 8 mpi tasks on 4 nodes with 2 threads per host "
-    echo "task and 2 mpi tasks on 4 MIC cards with 60 threads per MIC task "
-    echo "resulting in 40 total mpi tasks. "
+    echo "This will start 32 host MPI tasks spread across 4 nodes and "
+    echo "2 MPI tasks on 4 MIC cards resulting in 40 total MPI tasks. "
+    echo "Each host MPI task will use 2 threads/task and each MIC MPI task "
+    echo " will use 60 threads/task."
+    echo " "
+    echo "The tasks will be allocated in consecutive order on the nodes, e.g. "
+    echo " "
+    echo "NODE1:  8 host tasks ( 0 - 7) :  2 MIC tasks ( 8 - 9)"
+    echo "NODE2:  8 host tasks (10 -17) :  2 MIC tasks (18 -19)"
+    echo "NODE3:  8 host tasks (20 -27) :  2 MIC tasks (28 -29)"
+    echo "NODE4:  8 host tasks (30 -37) :  2 MIC tasks (38 -39)"
     echo " "
     echo "Note:  ibrun.symm does not support the -n or -o arguments. "
 }
@@ -61,8 +73,8 @@ eval "ADMIN_DIR=\$ADMIN_$SYSHOST"
 # echo "ARG1 = $1 "
 
 if [ "$1" != "-m" -a "$1" != "-c" ]; then
-    usage
-    exit 0
+  usage
+  exit 0
 fi
 
 # Check for some command line switches before the executable
@@ -73,21 +85,21 @@ hexec=""
 
 while [ $stop_parsing -ne 1 ]
 do
-    case "$1" in
-	-m)
-	    shift
-	    mexec=$1
-	    shift
-	    ;;
-	-c)
-	    shift
-	    hexec=$1
-	    shift
-	    ;;
-	*)
-            stop_parsing=1
-	    ;;
-    esac
+  case "$1" in
+    -m)
+      shift
+      mexec=$1
+      shift
+      ;;
+    -c)
+      shift
+      hexec=$1
+      shift
+      ;;
+    *)
+      stop_parsing=1
+      ;;
+  esac
 done
 
 pe_startTime=`date +%s`
@@ -107,57 +119,57 @@ fi
 
 SCHEDULER=SLURM
 
-    BATCH_JOB_ID=$SLURM_JOBID
-    NSLOTS_BATCH=$SLURM_NPROCS
-    #Parse the SLURM_TASKS_PER_NODE string to get # of node clusters
-    # e.g.  6(2x),5(2x) -- 1st 2 nodes run 6 tasks, next 2 nodes run 5 tasks
-    declare -a node_clusters=(`echo $SLURM_TASKS_PER_NODE | sed -e's/,/ /g'`)
+BATCH_JOB_ID=$SLURM_JOBID
+NSLOTS_BATCH=$SLURM_NPROCS
+#Parse the SLURM_TASKS_PER_NODE string to get # of node clusters
+# e.g.  6(2x),5(2x) -- 1st 2 nodes run 6 tasks, next 2 nodes run 5 tasks
+declare -a node_clusters=(`echo $SLURM_TASKS_PER_NODE | sed -e's/,/ /g'`)
 #    echo "DEBUG: ${node_clusters[@]} "
-    #Set the wayness for each node cluster using one env
-    # Format of node_tasks_ppn_info = 
-    # "{# of tasks per node},{#initial task id}_[repeats if necessary]"
-    #                                         ^
-    #No spaces are allowed in env variables that build_env.pl handles.
-    # So, an "_" is used in place of a space.
+#Set the wayness for each node cluster using one env
+# Format of node_tasks_ppn_info = 
+# "{# of tasks per node},{#initial task id}_[repeats if necessary]"
+#                                         ^
+#No spaces are allowed in env variables that build_env.pl handles.
+# So, an "_" is used in place of a space.
 
-    #Initialize variables needed to setup node_tasks_ppn_info
-    node_tasks_ppn_info=""
-    task_count=0
+#Initialize variables needed to setup node_tasks_ppn_info
+node_tasks_ppn_info=""
+task_count=0
 
-    #Loop over node clusters
-    for nodes in ${node_clusters[@]}; do
-      #Get the number of tasks per node
-      tasks_ppn_cluster=`echo $nodes | awk -F '(' '{print $1}'`
+#Loop over node clusters
+for nodes in ${node_clusters[@]}; do
+  #Get the number of tasks per node
+  tasks_ppn_cluster=`echo $nodes | awk -F '(' '{print $1}'`
 
-      #Determine how many nodes are in this cluster, i.e. have the same number of 
-      # tasks/node 
-      if [[ `echo $nodes | grep x` ]]; then
-        node_count=`echo $nodes | sed -e's/.*x\([0-9]\+\).*/\1/'`
-      else
-       node_count=1
-      fi
+  #Determine how many nodes are in this cluster, i.e. have the same number of 
+  # tasks/node 
+  if [[ `echo $nodes | grep x` ]]; then
+    node_count=`echo $nodes | sed -e's/.*x\([0-9]\+\).*/\1/'`
+  else
+    node_count=1
+  fi
 
-      #We have to set this up for each node when running with MIC
-      # Loop over the nodes in the node cluster
+  #We have to set this up for each node when running with MIC
+  # Loop over the nodes in the node cluster
 
-      node_index=0
-      while [ $node_index -lt $node_count ]; do
-        #Set the number of tasks/node for this node and the task id 
-        # at which it starts
-        node_tasks_ppn_info="${node_tasks_ppn_info}${tasks_ppn_cluster},${task_count}_"
+  node_index=0
+  while [ $node_index -lt $node_count ]; do
+    #Set the number of tasks/node for this node and the task id 
+    # at which it starts
+    node_tasks_ppn_info="${node_tasks_ppn_info}${tasks_ppn_cluster},${task_count}_"
 
-        #Increment the task counter by the number of tasks per node
-        let "task_count = $task_count + $tasks_ppn_cluster "
+    #Increment the task counter by the number of tasks per node
+    let "task_count = $task_count + $tasks_ppn_cluster "
 
-        #Increment the task counter by the number of tasks on the mic
-        let "task_count = $task_count + $MIC_PPN "
+    #Increment the task counter by the number of tasks on the mic
+    let "task_count = $task_count + $MIC_PPN "
 
-        let "node_index=$node_index+1"
-      done
-    done
+    let "node_index=$node_index+1"
+  done
+done
     
-    #Export as an env variable to pass along to each task
-    export NODE_TASKS_PPN_INFO="\"$node_tasks_ppn_info\""
+#Export as an env variable to pass along to each task
+export NODE_TASKS_PPN_INFO="\"$node_tasks_ppn_info\""
 
 echo "TACC: Starting up job $BATCH_JOB_ID"
 
@@ -287,54 +299,48 @@ elif [ x"$MODE" == "ximpi_hydra" ]; then
    task_id=0
    nslots_flag=0
 
-   #Only build the hostlist if there is a host executable
-   # It's not possible yet to run on multiple MIC's without
-   # at least one MPI task on the first host!
-   if [ "x$hexec" != "x" ]; then
-     #Build the hostlist using the SLURM_TASKS_PER_NODE syntax
-     for nodes in ${node_clusters[@]}; do
+#Build the hostlist for host, mic, and/or both
 
-       #Get the task count and node count for each node cluster
-       task_count=`echo $nodes | awk -F '(' '{print $1}'`
-       if [[ `echo $nodes | grep x` ]]; then
-         node_count=`echo $nodes | sed -e's/.*x\([0-9]\+\).*/\1/'`
-       else
-         node_count=1
-       fi
+   #Build the hostlist for host using the SLURM_TASKS_PER_NODE syntax
+   for nodes in ${node_clusters[@]}; do
+
+     #Get the task count and node count for each node cluster
+     task_count=`echo $nodes | awk -F '(' '{print $1}'`
+     if [[ `echo $nodes | grep x` ]]; then
+       node_count=`echo $nodes | sed -e's/.*x\([0-9]\+\).*/\1/'`
+     else
+       node_count=1
+     fi
 #DEBUG       echo "DEBUG: nodes=$nodes task_count=$task_count  node_count=$node_count"
 
-       #Build the host list to match tasks per node
-       for i in `seq 0 $((node_count-1))`; do
-         #Build command for host
+     #Build the host list to match tasks per node
+     for i in `seq 0 $((node_count-1))`; do
+       #Build command for host
+       if [ "x$hexec" != "x" ]; then
          #First check to see if we exceed MY_NSLOTS
          task_id=$((task_id+task_count))
          if [ "$MY_NSLOTS" -lt "$task_id" ]; then  
-            task_count=$((task_count + MY_NSLOTS - task_id))
+           task_count=$((task_count + MY_NSLOTS - task_id))
          fi
+         #Add host command to the configfile
          if [ "$nslots_flag" -eq 0 ]; then  
-            echo " -n $task_count -host ${br0_hostlist[${host_id}]} $hexec "  >> $configfile_tacc 
+           echo " -n $task_count -host ${br0_hostlist[${host_id}]} $hexec "  >> $configfile_tacc 
          fi
-         #Build command for mic
-         if [ "x$mexec" != "x" ]; then
-           cmd=" $cmd -n $MIC_PPN -host ${mic0_hostlist[${host_id}]} "
-           cmd=" $cmd $ENV_MIC "
-           cmd=" $cmd $mexec "
-           echo "$cmd " >> $configfile_tacc 
-         fi
-         cmd=""
-         #If we exceeded MY_NSLOTS -- don't set up any more host tasks
-         if [ "$MY_NSLOTS" -lt "$task_id" ]; then nslots_flag=1; fi  
-         ((host_id++))
-       done
-     done
+       fi # end entry for host in config file
 
-   else
-   #Set up run for one mic card on first host
-     cmd=" $cmd -n $MIC_PPN -host ${mic0_hostlist[${host_id}]} "
-     cmd=" $cmd $ENV_MIC "
-     cmd=" $cmd $mexec "
-     echo "$cmd " >> $configfile_tacc 
-   fi
+       #Build command for mic
+       if [ "x$mexec" != "x" ]; then
+         cmd=" $cmd -n $MIC_PPN -host ${mic0_hostlist[${host_id}]} "
+         cmd=" $cmd $ENV_MIC "
+         cmd=" $cmd $mexec "
+         echo "$cmd " >> $configfile_tacc 
+       fi # end entry for mic in config file
+       cmd=""
+       #If we exceeded MY_NSLOTS -- don't set up any more host tasks
+       if [ "$MY_NSLOTS" -lt "$task_id" ]; then nslots_flag=1; fi  
+       ((host_id++))
+     done
+   done
 
    echo " " >> $configfile_tacc 
 
@@ -365,7 +371,7 @@ fi
 
 pe_mapD="$ADMIN_DIR/reverseMapT"
 
-if [ x$hexec != x ]; then
+if [ "x$hexec" != x ]; then
   pe_fn=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.usage.XXXXXXXX`
   mv $pe_fn $pe_fn.lua
   pe_fn=$pe_fn.lua
@@ -392,9 +398,9 @@ echo "TACC: Starting parallel tasks..."
 if [ x"$MODE" == "ximpi_hydra" ]; then
 
     #Run
-    echo  "  $MPICH_HOME/intel64/bin/mpiexec.hydra -configfile $configfile_tacc "
+    echo  "  $MPICH_HOME/intel64/bin/mpiexec.hydra -iface br0 -configfile $configfile_tacc "
    
-    $MPICH_HOME/intel64/bin/mpiexec.hydra -configfile $configfile_tacc
+    $MPICH_HOME/intel64/bin/mpiexec.hydra -iface br0 -configfile $configfile_tacc
     res=$?
 else
     echo -e "TACC: Could not determine which MPI stack to use.\nTACC:Exiting.\n"
@@ -402,7 +408,7 @@ else
 fi
 
 
-if [ x$hexec != x ]; then
+if [ "x$hexec" != x ]; then
   pe_endTime=`date +%s`
   pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
   
