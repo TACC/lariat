@@ -20,8 +20,13 @@ function readRMap(reverseMapD)
    if (rmF) then
       local whole  = rmF:read("*all")
       rmF:close()
-
-      assert(loadstring(whole))()
+      local func
+      func, msg = loadstring(whole)
+      if (func) then
+         func()
+      else
+         dbg.print("Problem with reverse map: ",msg,"\n")
+      end
    end
 
    dbg.fini()

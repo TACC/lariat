@@ -203,7 +203,9 @@ function main()
       return status
    end
 
-
+   if (next(reverseMapT) == nil) then
+      dbg.print("reverseMapT is empty\n")
+   end
    
 
    dbg.print("sysT.mpi: ",tostring(sysT.mpi), ", sysT.comp: ",tostring(sysT.comp),"\n")

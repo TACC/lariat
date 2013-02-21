@@ -9,6 +9,8 @@
 
 # Figure out which system we are on.
 
+ibrunDir=`dirname $0`
+
 nlocal=$(hostname -f)
 nA=($(builtin echo "$nlocal" | tr '.' ' '))
 first=${nA[0]}
@@ -454,9 +456,13 @@ pe_fn=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.usage.XXXXXXXX`
 mv $pe_fn $pe_fn.lua
 pe_fn=$pe_fn.lua
 
-checkExec --map $pe_mapD -- $fullcmd "$@"
+if [ -x "$ibrunDir/checkExec" ]; then
+  $ibrunDir/checkExec --map $pe_mapD -- $fullcmd "$@"
+fi
 
-parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $fullcmd "$@"
+if [ -x "$ibrunDir/parseLDD" ]; then
+  parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $fullcmd "$@"
+fi
 
 
 ## Modify $hostfile_tacc if user passed special options to ibrun
@@ -574,7 +580,9 @@ fi
 pe_endTime=`date +%s`
 pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
 
-parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn -- $fullcmd "$@"
+if [ -x "$ibrunDir/parseLDD" ]; then
+  $ibrunDir/parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn -- $fullcmd "$@"
+fi
 
 if [ $res -ne 0 ]; then
     echo "TACC: MPI job exited with code: $res"

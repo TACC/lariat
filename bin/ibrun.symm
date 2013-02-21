@@ -37,6 +37,8 @@ function usage {
     echo "Note:  ibrun.symm does not support the -n or -o arguments. "
 }
 
+ibrunDir=`dirname $0`
+
 nlocal=$(hostname -f)
 nA=($(builtin echo "$nlocal" | tr '.' ' '))
 first=${nA[0]}
@@ -368,9 +370,13 @@ if [ x$hexec != x ]; then
   mv $pe_fn $pe_fn.lua
   pe_fn=$pe_fn.lua
 
-  checkExec --map $pe_mapD -- $hexec
+  if [ -x "$ibrunDir/checkExec" ]; then
+     checkExec --map $pe_mapD -- $hexec
+  fi
 
-  parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $hexec
+  if [ -x "$ibrunDir/parseLDD" ]; then
+    parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $hexec
+  fi
 fi
 
 if [ -n "$TACC_IBWRAPPER_DEBUG" ]; then
@@ -400,8 +406,9 @@ if [ x$hexec != x ]; then
   pe_endTime=`date +%s`
   pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
   
-  parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn -- $hexec
-fi
+  if [ -x "$ibrunDir/parseLDD" ]; then
+    parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn -- $hexec
+  fi
 
 if [ $res -ne 0 ]; then
     echo "TACC: MPI job exited with code: $res"
