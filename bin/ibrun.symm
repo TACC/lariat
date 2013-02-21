@@ -369,7 +369,7 @@ fi
 
 pe_mapD="$ADMIN_DIR/reverseMapT"
 
-if [ x$hexec != x ]; then
+if [ "x$hexec" != x ]; then
   pe_fn=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.usage.XXXXXXXX`
   mv $pe_fn $pe_fn.lua
   pe_fn=$pe_fn.lua
@@ -402,7 +402,7 @@ else
 fi
 
 
-if [ x$hexec != x ]; then
+if [ "x$hexec" != x ]; then
   pe_endTime=`date +%s`
   pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
   
