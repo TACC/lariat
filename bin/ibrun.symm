@@ -377,11 +377,11 @@ if [ "x$hexec" != x ]; then
   pe_fn=$pe_fn.lua
 
   if [ -x "$ibrunDir/checkExec" ]; then
-     checkExec --map $pe_mapD -- $hexec
+     $ibrunDir/checkExec --map $pe_mapD -- $hexec
   fi
 
   if [ -x "$ibrunDir/parseLDD" ]; then
-    parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $hexec
+    $ibrunDir/parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $hexec
   fi
 fi
 
@@ -413,7 +413,7 @@ if [ "x$hexec" != x ]; then
   pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
   
   if [ -x "$ibrunDir/parseLDD" ]; then
-    parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn -- $hexec
+    $ibrunDir/parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn -- $hexec
   fi
 
 if [ $res -ne 0 ]; then

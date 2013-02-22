@@ -112,7 +112,6 @@ function matchExecWmodules(reverseMapT, ldd)
       local dir, lib = splitFileName(libPathA[i])
       local pkgInfo = reverseMapT[regularize(dir)]
       local found   = (pkgInfo ~= nil)
-      dbg.print("libDir: ",regularize(dir)," found: ",tostring(found),"\n")
       if (pkgInfo) then
          local t            = pkgT[pkgInfo.pkg] or {}
          local libA         = t.libA or {}
@@ -220,10 +219,10 @@ function main()
    end
    
    if (sysT.mpi ~= execT.mpi and sysT.mpi and execT.mpi) then
-      io.stdout:write("******************************************************\n",
-                      " WARNING: Your MPI Environment is :       ",sysT.mpi,"\n",
+      io.stdout:write("*******************************************************\n",
+                      " WARNING: Your MPI Environment is :       ",sysT.mpi, "\n",
                       "          Your executable was built with: ",execT.mpi,"\n",
-                      "******************************************************\n")
+                      "*******************************************************\n")
       status = 1
    end      
                       
@@ -241,10 +240,10 @@ function main()
    if (not found ) then
       local compStr = concatTbl(execT.compA, " or ")
       if (sysT.comp and compStr) then
-         io.stdout:write("******************************************************\n",
+         io.stdout:write("*******************************************************\n",
                          " WARNING: Your Compiler Environment is :  ",sysT.comp,"\n",
-                         "          Your executable was built with: ",compStr,"\n",
-                         "******************************************************\n")
+                         "          Your executable was built with: ",compStr,  "\n",
+                         "*******************************************************\n")
       end
       status = 1
    end
