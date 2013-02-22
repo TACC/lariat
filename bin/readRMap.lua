@@ -20,8 +20,7 @@ function readRMap(reverseMapD)
    if (rmF) then
       local whole  = rmF:read("*all")
       rmF:close()
-      local func
-      func, msg = loadstring(whole)
+      local func, msg = loadstring(whole)
       if (func) then
          func()
       else
