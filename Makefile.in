@@ -64,8 +64,8 @@ __installMe:
              chmod +x $(DIRLOC)/$$fn;                             \
         done
 
-PKGS:   $(REQUIRED_PKGS)
-	for i in $^; do                                      \
+PKGS:   
+	for i in $(REQUIRED_PKGS); do                        \
 	  if [ -f src/$(notdir $$i) ]; then                  \
             cp src/$(notdir $$i) $(DESTDIR)$(BIN);           \
           else                                               \
