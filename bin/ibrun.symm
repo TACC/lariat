@@ -415,6 +415,7 @@ if [ "x$hexec" != x ]; then
   if [ -x "$ibrunDir/parseLDD" ]; then
     $ibrunDir/parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn -- $hexec
   fi
+fi
 
 if [ $res -ne 0 ]; then
     echo "TACC: MPI job exited with code: $res"
