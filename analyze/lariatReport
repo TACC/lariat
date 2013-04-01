@@ -21,6 +21,7 @@ local master       = {}
 require("serializeTbl")
 require("string_split")
 require("fileOps")
+require("declare")
 require("VarDump")
 userT = {}
 local Dbg = require("Dbg")
@@ -202,37 +203,7 @@ function main()
    local masterTbl  = masterTbl()
    local pargs      = masterTbl.pargs
 
-   --for userName, homeDir in processPWRec("/etc/passwd") do
-   --   local dir = pathJoin(homeDir,".sge")
-   --   if ( isDir(dir)) then
-   --      iuser = iuser + 1
-   --   end
-   --end
-   --local nusers = iuser
-   --
-   --local activeT = {}
-   --iuser = 0
-   --for userName, homeDir in processPWRec("/etc/passwd") do
-   --   local dir = pathJoin(homeDir,".sge")
-   --   if ( isDir(dir)) then
-   --      iuser = iuser + 1
-   --      local j = floor(iuser/nusers*100)
-   --      if ( j > fence) then
-   --         io.stderr:write("#")
-   --         io.stderr:flush()
-   --         fence = fence + unit
-   --      end
-   --      for file in lfs.dir(dir) do
-   --         if (file:sub(-4,-1) == ".lua") then
-   --            local fn = pathJoin(dir,file)
-   --            activeT[userName] = (activeT[userName] or 0) + 1
-   --            numTimes = numTimes + 1
-   --            processLuaRecord(fn, sgeT, accT, libT)
-   --        end
-   --      end
-   --   end
-   --end
-
+   declare("sgeT",{})
 
    for i = 1,#pargs do
       loadfile(pargs[i])
