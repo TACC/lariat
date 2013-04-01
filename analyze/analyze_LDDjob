@@ -28,6 +28,6 @@ eval SOURCEME=\$SOURCEME_$SYSHOST
 
 . /root/$SOURCEME
 
-module load lua
+module try-add lua
 
 $MCLAY/w/ibwrapper/analyze/lariatReport "$@"
