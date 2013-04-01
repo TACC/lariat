@@ -105,11 +105,14 @@ done
 pe_startTime=`date +%s`
 
 # --------------------------------------------------------
-# Check for user provided MIC_PPN or MIC_MY_NSLOTS 
+# Check for user provided MIC_PPN and MIC_MY_NSLOTS 
 #  and MIC_OMP_NUM_THREADS
 # --------------------------------------------------------
-if [ "x$MIC_MY_NSLOTS" == "x" -a "x$MIC_PPN" == "x" ]; then
+if [ "x$MIC_PPN" == "x" ]; then
    MIC_PPN=4
+fi
+if [ "x$MIC_MY_NSLOTS" == "x" ]; then
+   MIC_MY_NSLOTS=$((MIC_PPN * SLURM_NNODES))
 fi
 if [ x"$MIC_OMP_NUM_THREADS" == "x" ]; then
    export MIC_OMP_NUM_THREADS=30
@@ -258,7 +261,11 @@ elif [ x"$MODE" == "ximpi_hydra" ]; then
    export I_MPI_OFA_ADAPTER_NAME=mlx4_0
    #Allow the user to set their own fabrics setting
    if [ -z "$I_MPI_FABRICS" ]; then
-    export I_MPI_FABRICS=shm:ofa
+    export I_MPI_FABRICS=shm:dapl
+   fi
+   #Allow the user to set their own dapl provider
+   if [ -z "$I_MPI_DAPL_PROVIDER" ]; then
+    export I_MPI_DAPL_PROVIDER="ofa-v2-mlx4_0-1u"
    fi
 
    #Get a list of hosts
@@ -281,7 +288,8 @@ elif [ x"$MODE" == "ximpi_hydra" ]; then
    if [ -z "${MIC_ENV_PREFIX}" ]; then
      export MIC_ENV_PREFIX=MIC
    fi
-   ENV_MIC=`env | grep -i ^${MIC_ENV_PREFIX}_ | egrep -v MIC_ENV_PREFIX | awk -vORS=' ' -v pfx=${MIC_ENV_PREFIX} -F= '{b=$1; a=substr($1,length(pfx)+2,length($1));  if (length($2) > 0 ) print " -env "a" "$2" "; }'`
+#   ENV_MIC=`env | grep -i ^${MIC_ENV_PREFIX}_ | egrep -v MIC_ENV_PREFIX | awk -vORS=' ' -v pfx=${MIC_ENV_PREFIX} -F= '{b=$1; a=substr($1,length(pfx)+2,length($1));  if (length($2) > 0 ) print " -env "a" "$2" "; }'`
+   ENV_MIC=`env | grep -i ^${MIC_ENV_PREFIX}_ | egrep -v MIC_ENV_PREFIX | sed -e s/=/TACC_ENV_DELIMITER/ | awk -vORS=' ' -v pfx=${MIC_ENV_PREFIX} -F "TACC_ENV_DELIMITER" '{b=$1; a=substr($1,length(pfx)+2,length($1));  if (length($2) > 0 ) print " -env "a" "$2" "; }'`
 
    #Set KMP_AFFINITY and I_MPI_PIN_MODE at the beginning of ENV_MIC
    # If there are any user settings, e.g. MIC_KMP_AFFINITY, they will override these defaults
@@ -300,6 +308,9 @@ elif [ x"$MODE" == "ximpi_hydra" ]; then
    #Track # of tasks for MY_NSLOTS and flag to end host tasks
    task_id=0
    nslots_flag=0
+   #Track # of tasks for MIC_MY_NSLOTS and flag to end MIC tasks
+   mic_task_id=0
+   mic_nslots_flag=0
 
 #Build the hostlist for host, mic, and/or both
 
@@ -332,14 +343,24 @@ elif [ x"$MODE" == "ximpi_hydra" ]; then
 
        #Build command for mic
        if [ "x$mexec" != "x" ]; then
-         cmd=" $cmd -n $MIC_PPN -host ${mic0_hostlist[${host_id}]} "
-         cmd=" $cmd $ENV_MIC "
-         cmd=" $cmd $mexec "
-         echo "$cmd " >> $configfile_tacc 
+         #First check to see if we exceed MIC_MY_NSLOTS
+         mic_task_id=$((mic_task_id+MIC_PPN))
+         if [ "$MIC_MY_NSLOTS" -lt "$mic_task_id" ]; then  
+           MIC_PPN=$((MIC_PPN + MIC_MY_NSLOTS - mic_task_id))
+         fi
+         #Add MIC command to the configfile
+         if [ "$mic_nslots_flag" -eq 0 ]; then  
+           cmd=" $cmd -n $MIC_PPN -host ${mic0_hostlist[${host_id}]} "
+           cmd=" $cmd $ENV_MIC "
+           cmd=" $cmd $mexec "
+           echo "$cmd " >> $configfile_tacc 
+         fi
        fi # end entry for mic in config file
        cmd=""
        #If we exceeded MY_NSLOTS -- don't set up any more host tasks
        if [ "$MY_NSLOTS" -lt "$task_id" ]; then nslots_flag=1; fi  
+       #If we exceeded MIC_MY_NSLOTS -- don't set up any more MIC tasks
+       if [ "$MIC_MY_NSLOTS" -lt "$mic_task_id" ]; then mic_nslots_flag=1; fi  
        ((host_id++))
      done
    done
