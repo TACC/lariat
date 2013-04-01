@@ -14,6 +14,7 @@ local mod       = math.mod
 execNameA       = {}
 
 require("strict")
+local Dbg          = require("Dbg")
 local BeautifulTbl = require("BeautifulTbl")
 local Optiks       = require("Optiks")
 local Version      = "1.4"
@@ -23,7 +24,7 @@ require("string_split")
 require("fileOps")
 require("declare")
 require("VarDump")
-userT = {}
+sgeT = {}
 local Dbg = require("Dbg")
 
 
@@ -203,7 +204,7 @@ function main()
    local masterTbl  = masterTbl()
    local pargs      = masterTbl.pargs
 
-   declare("sgeT",{})
+   --declare("sgeT",{})
 
    for i = 1,#pargs do
       loadfile(pargs[i])
