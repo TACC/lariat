@@ -6,22 +6,23 @@ firstName=${my_hostname%%.*}
 secondName=${my_hostname#*.}
 secondName=${secondName%%.*}
 
-if [ "$firstName" = spur ]; then
-  SYSHOST=ranger
-else
-  SYSHOST=$secondName
-fi
+SYSHOST=$secondName
 
-MCLAY_ranger=/share/home/00515/mclay
 MCLAY_ls4=/home1/00515/mclay
+MCLAY_stampede=/home1/00515/mclay
 
-SOURCEME_ranger=sourceme.sh
 SOURCEME_ls4=sourceme
+SOURCEME_stampede=sourceme
 
 eval MCLAY=\$MCLAY_$SYSHOST
 
-export LUA_PATH="$MCLAY"'/l/pkg/luatools/luatools/share/5.1/?.lua;;'
-export LUA_CPATH="$MCLAY"'/l/pkg/luatools/luatools/lib/5.1/?.so;;'
+for i in $MCLAY/l/pkg/x86_64/luatools/luatools/ \
+         $MCLAY/l/pkg/luatools/luatools/ ; do
+  if [ -f $i/share/5.1/strict.lua ]; then
+    export LUA_PATH="$i/share/5.1/?.lua;;"
+    export LUA_CPATH="$i/lib/5.1/?.lua;;"
+  fi
+done
 
 eval SOURCEME=\$SOURCEME_$SYSHOST
 
@@ -29,4 +30,4 @@ eval SOURCEME=\$SOURCEME_$SYSHOST
 
 module load lua
 
-$MCLAY/w/ibwrapper/analyze/processLDDjob "$@"
+$MCLAY/w/ibwrapper/analyze/lariatReport "$@"

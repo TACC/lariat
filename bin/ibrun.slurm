@@ -2,8 +2,6 @@
 # -*-sh-*-
 # ---------------------------------------------------------------------
 # Stampede Version (SLURM)
-#
-# $Id:$
 # ---------------------------------------------------------------------
 # set -x
 
@@ -18,7 +16,6 @@ SYSHOST=${nA[1]}
 
 fqdn="$SYSHOST.tacc.utexas.edu"
 
-
 ADMIN_stampede="/home1/moduleData/reverseMapD"
 ADMIN_ls4="/home1/moduleData/reverseMapD"
 ADMIN_longhorn="/share/tacc_admin/reverseMapD"
@@ -31,18 +28,26 @@ eval "CPN=\$CPN_$SYSHOST"
 
 NUMCORES=$((CPN*2))
 
-# Temporary fix to disable limic: 12/6/12
+# ------------------------------
+# Default Environment Settings
+# ------------------------------
 
-if [ -z "$MV2_SMP_USE_LIMIC2" ]; then
-    export MV2_SMP_USE_LIMIC2=0
-fi
+# 12/16/12 (ks): Temporary fix to disable limic
+# 02/26/13 (ks): limic re-enabled by default based on bug fix from OSU
 
-# Temporary fix to disable UD hybrid: 01/04/13
+#if [ -z "$MV2_SMP_USE_LIMIC2" ]; then
+#    export MV2_SMP_USE_LIMIC2=0
+#fi
+
+# 01/14/13 (ks): Temporary fix to disable UD hybrid
 
 if [ -z "$MV2_USE_UD_HYBRID" ]; then
     export MV2_USE_UD_HYBRID=0
 fi
 
+if [ -z "$MV2_USE_OLD_BCAST" ]; then
+    export MV2_USE_OLD_BCAST=1
+fi
 
 ## Look through all the arguments to ibrun.  If the user asked for help (-h)
 ## print the help and then exit immediately.
@@ -461,7 +466,7 @@ if [ -x "$ibrunDir/checkExec" ]; then
 fi
 
 if [ -x "$ibrunDir/parseLDD" ]; then
-  parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $fullcmd "$@"
+  $ibrunDir/parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $fullcmd "$@"
 fi
 
 
