@@ -112,7 +112,7 @@ if [ "x$MIC_MY_NSLOTS" == "x" -a "x$MIC_PPN" == "x" ]; then
    MIC_PPN=4
 fi
 if [ x"$MIC_OMP_NUM_THREADS" == "x" ]; then
-   MIC_OMP_NUM_THREADS=30
+   export MIC_OMP_NUM_THREADS=30
 fi
 
 # Get the PE hostfile, number of slots and wayness from the environment
@@ -254,10 +254,12 @@ if [ x"$MODE" == "xmvapich2_slurm" -o x"$MODE" == "xmvapich2_ssh" ]; then
 elif [ x"$MODE" == "ximpi_hydra" ]; then
 
    #Ensure the env is setup for host/mic mpi
-   export I_MPI_FABRICS=shm:ofa
    export I_MPI_MIC=1
    export I_MPI_OFA_ADAPTER_NAME=mlx4_0
-#   export I_MPI_DEBUG=2
+   #Allow the user to set their own fabrics setting
+   if [ -z "$I_MPI_FABRICS" ]; then
+    export I_MPI_FABRICS=shm:ofa
+   fi
 
    #Get a list of hosts
    declare -a hostlist=(`scontrol show hostname $SLURM_NODELIST `)
@@ -344,12 +346,6 @@ elif [ x"$MODE" == "ximpi_hydra" ]; then
 
    echo " " >> $configfile_tacc 
 
-   #Ensure the env is setup for host/mic mpi
-   export I_MPI_FABRICS=shm:ofa
-   export I_MPI_MIC=1
-   export I_MPI_OFA_ADAPTER_NAME=mlx4_0
-#DEBUG   export I_MPI_DEBUG=2
-
 else
     # Some other MPI stack? fail.
     echo "TACC: Could not determine MPI stack. Exiting!"
@@ -415,6 +411,7 @@ if [ "x$hexec" != x ]; then
   if [ -x "$ibrunDir/parseLDD" ]; then
     $ibrunDir/parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn -- $hexec
   fi
+fi
 
 if [ $res -ne 0 ]; then
     echo "TACC: MPI job exited with code: $res"
