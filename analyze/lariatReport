@@ -216,8 +216,6 @@ function main()
    local s = serializeTbl{indent=true, name="accT", value=accT}
    io.stdout:write("\n",s,"\n")
                
-   processExecT(sgeT,execT)
-
    reportLibT(libT)   
 
    reportTop(execT, masterTbl.execFile)
