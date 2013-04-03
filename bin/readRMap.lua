@@ -4,15 +4,17 @@ require("declare")
 require("string_split")
 local Dbg = require("Dbg")
 
+reverseMapT = false
+
 function readRMap(reverseMapD)
 
    local dbg = Dbg:dbg()
    dbg.start("readRMap(",reverseMapD,")")
    -- open reverseMap file and read it in.
 
-   local reverseMapT = {}
+   local mapT = {}
 
-   declare("reverseMapT",{})
+   --declare("reverseMapT",{})
    for dir in reverseMapD:split(":") do
 
       local reverseMapFn = pathJoin(reverseMapD,"reverseMapT.lua")
@@ -35,11 +37,11 @@ function readRMap(reverseMapD)
 
       local rmapT = _G.reverseMapT
       for k, v in pairs(rmapT) do
-         reverseMapT[k] = v
+         mapT[k] = v
       end
    end
 
    dbg.fini()
-   return reverseMapT 
+   return mapT 
 
 end
