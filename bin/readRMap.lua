@@ -17,11 +17,11 @@ function readRMap(reverseMapD)
    --declare("reverseMapT",{})
    for dir in reverseMapD:split(":") do
 
-      local reverseMapFn = pathJoin(reverseMapD,"reverseMapT.lua")
+      local reverseMapFn = pathJoin(dir,"reverseMapT.lua")
       local rmF          = io.open(reverseMapFn,"r")
       dbg.print("(1) fn: ", reverseMapFn, ", found: ", tostring((not (not rmF))),"\n")
       if (not rmF) then
-         reverseMapFn = pathJoin(reverseMapD,"reverseMapT.old.lua")
+         reverseMapFn = pathJoin(dir,"reverseMapT.old.lua")
          rmF          = io.open(reverseMapFn,"r")
          dbg.print("(2) fn: ", reverseMapFn, ", found: ", tostring((not (not rmF))),"\n")
       end
