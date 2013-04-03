@@ -33,6 +33,8 @@ function readRMap(reverseMapD)
          else
             dbg.print("Problem with reverse map: ",msg,"\n")
          end
+      else
+         dbg.print("Unable to open rmap file\n")
       end
 
       local rmapT = _G.reverseMapT
