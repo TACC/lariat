@@ -273,7 +273,7 @@ function options()
       name   = {'-m','--reverseMap', '--map'},
       dest   = 'reverseMapD',
       action = 'store',
-      help   = "reverseMap directory",
+      help   = "reverseMap directorys",
    }
 
    local optionTbl, pargs = cmdlineParser:parse(arg)
