@@ -19,9 +19,11 @@ function readRMap(reverseMapD)
 
       local reverseMapFn = pathJoin(reverseMapD,"reverseMapT.lua")
       local rmF          = io.open(reverseMapFn,"r")
+      dbg.print("(1) fn: ", reverseMapFn, ", found: ", tostring((not (not rmF))),"\n")
       if (not rmF) then
          reverseMapFn = pathJoin(reverseMapD,"reverseMapT.old.lua")
          rmF          = io.open(reverseMapFn,"r")
+         dbg.print("(2) fn: ", reverseMapFn, ", found: ", tostring((not (not rmF))),"\n")
       end
       
       if (rmF) then
