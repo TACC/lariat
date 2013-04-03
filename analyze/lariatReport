@@ -47,6 +47,16 @@ function processSgeT(sgeT, accT, execT, libT)
             accT.system.num = accT.system.num + 1
             accT.system.su  = accT.system.su  + su
          end
+
+         if (execType:find("^user:binary"))then
+            accT.user.num = accT.user.num + 1
+            accT.user.su  = accT.user.su  + su
+         end
+
+         if (execType:find("^user:script"))then
+            accT.script.num = accT.script.num + 1
+            accT.script.su  = accT.script.su  + su
+         end
          
          local exec      = barefilename(v.exec)
          local t         = execT[exec] or { num=0, su = 0, job={id="", su = 0},userT={}}
@@ -201,6 +211,8 @@ function main()
    local libT  = {}
    local accT  = { 
       system  = {num = 0, su    =  0 },
+      user    = {num = 0, su    =  0 },
+      script  = {num = 0, su    =  0 },
    }
 
    options()
@@ -220,11 +232,28 @@ function main()
       processSgeT(sgeT, accT, execT, libT)
    end
 
-   io.stdout:write("\n")
+   totalNum = accT.system.num + accT.user.num + accT.script.num
+   totalSU  = accT.system.su  + accT.user.su  + accT.script.su
 
-   local s = serializeTbl{indent=true, name="accT", value=accT}
-   io.stdout:write("\n",s,"\n")
-               
+   local b = {}
+   b[#b+1] = { "Kind"," Number of Jobs", "% Jobs" " Number of SU", "% SU" }
+   b[#b+1] = { "----","---------------", "------" "-------------", "----" }
+   
+   local kindA = {"system", "user", "script"}
+
+   for i = 1,#kindA do
+      local a    = {}
+      local kind = kindA[i]
+      a[#a+1]    = kind
+      a[#a+1]    = tostring(accT[kind].num)
+      a[#a+1]    = tostring(accT[kind].num/totalNum*100.0)
+      a[#a+1]    = tostring(accT[kind].su)
+      a[#a+1]    = tostring(accT[kind].su/totalSU*100.0)
+      b[#b+1]    = a
+   end
+   local bt = BeautifulTbl:new{tbl=b}
+   io.stdout:write(bt:build_tbl(),'\n')
+   
    reportLibT(libT)   
 
    reportTop(execT, masterTbl.execFile)
