@@ -21,6 +21,7 @@ REQUIRED_PKGS   :=                \
                    TermWidth      \
                    VarDump        \
 	           capture        \
+	           declare        \
 	           fileOps        \
                    pairsByKeys    \
 	           serializeTbl   \

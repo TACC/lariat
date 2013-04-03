@@ -1,5 +1,6 @@
 require("strict")
 require("fileOps")
+require("declare")
 require("string_split")
 local Dbg = require("Dbg")
 
@@ -11,6 +12,7 @@ function readRMap(reverseMapD)
 
    local reverseMapT = {}
 
+   declare("reverseMapT",{})
    for dir in reverseMapD:split(":") do
 
       local reverseMapFn = pathJoin(reverseMapD,"reverseMapT.lua")
