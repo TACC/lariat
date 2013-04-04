@@ -151,7 +151,7 @@ function reportTop(execT, execFile)
    -- Report Top SU jobs
 
    local masterTbl = masterTbl()
-   local count     = tonumber(masterTbl.num)
+   local count     = tonumber(masterTbl.count)
 
    table.sort(a,function(x,y) return x.su > y.su end)
 
