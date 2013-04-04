@@ -43,9 +43,11 @@ function processSgeT(sgeT, accT, execT, libT)
          t.user[v.user]   = (t.user[v.user] or 0) + 1
          accT[execType]   = t
          
+         local prefix = ""
          if (execType:find("^system:"))then
             accT.system.num = accT.system.num + 1
             accT.system.su  = accT.system.su  + su
+            prefix = "(" .. execType:sub(8) ..")"
          end
 
          if (execType:find("^user:binary"))then
@@ -58,7 +60,8 @@ function processSgeT(sgeT, accT, execT, libT)
             accT.script.su  = accT.script.su  + su
          end
          
-         local exec      = barefilename(v.exec)
+         local exec      = prefix .. barefilename(v.exec)
+
          local t         = execT[exec] or { num=0, su = 0, job={id="", su = 0},userT={}}
          t.su            = t.su  + su
          t.num           = t.num + 1
@@ -235,12 +238,12 @@ function main()
       processSgeT(sgeT, accT, execT, libT)
    end
 
-   totalNum = accT.system.num + accT.user.num + accT.script.num
-   totalSU  = accT.system.su  + accT.user.su  + accT.script.su
+   local totalNum = accT.system.num + accT.user.num + accT.script.num
+   local totalSU  = accT.system.su  + accT.user.su  + accT.script.su
 
    local b = {}
-   b[#b+1] = { "Kind"," Number of Jobs", "% Jobs" " Number of SU", "% SU" }
-   b[#b+1] = { "----","---------------", "------" "-------------", "----" }
+   b[#b+1] = { "Kind"," Number of Jobs", "% Jobs", " Number of SU", "% SU" }
+   b[#b+1] = { "----","---------------", "------", "-------------", "----" }
    
    local kindA = {"system", "user", "script"}
 
@@ -249,9 +252,9 @@ function main()
       local kind = kindA[i]
       a[#a+1]    = kind
       a[#a+1]    = tostring(accT[kind].num)
-      a[#a+1]    = tostring(accT[kind].num/totalNum*100.0)
+      a[#a+1]    = string.format("%6.2f",tostring(accT[kind].num/totalNum*100.0))
       a[#a+1]    = tostring(accT[kind].su)
-      a[#a+1]    = tostring(accT[kind].su/totalSU*100.0)
+      a[#a+1]    = string.format("%6.2f",tostring(accT[kind].su/totalSU*100.0))
       b[#b+1]    = a
    end
    local bt = BeautifulTbl:new{tbl=b}
