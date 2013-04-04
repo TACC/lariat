@@ -147,9 +147,12 @@ function reportTop(execT, execFile)
 
    -- Report Top SU jobs
 
+   local masterTbl = masterTbl()
+   local count     = masterTbl.num
+
    table.sort(a,function(x,y) return x.su > y.su end)
 
-   local n = math.min(20,#a)
+   local n = math.min(count,#a)
    
    --for i = 1, #a do
    --   print(i,",",a[i].su)
@@ -168,7 +171,7 @@ function reportTop(execT, execFile)
 
    table.sort(a,function(x,y) return x.num > y.num end)
 
-   local n = math.min(20,#a)
+   local n = math.min(count,#a)
    
    --for i = 1, #a do
    --   print(i,",",a[i].su)
@@ -271,6 +274,14 @@ function options()
       action  = 'store',
       default = nil,
       help    = "File containing a list of executables in a lua Table execNameA={}",
+   }
+
+   cmdlineParser:add_option{ 
+      name    = {'-n','--top'},
+      dest    = 'count',
+      action  = 'store',
+      default = "20",
+      help    = "The number of executables to report",
    }
    cmdlineParser:add_option{ 
       name    = {'-d','--debug'},
