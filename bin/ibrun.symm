@@ -267,6 +267,10 @@ elif [ x"$MODE" == "ximpi_hydra" ]; then
    if [ -z "$I_MPI_DAPL_PROVIDER" ]; then
     export I_MPI_DAPL_PROVIDER="ofa-v2-mlx4_0-1u"
    fi
+   #Allow the user to set their own branch count if needed
+   if [ -z "$I_MPI_HYDRA_BRANCH_COUNT" ]; then
+    export I_MPI_HYDRA_BRANCH_COUNT=6000
+   fi
 
    #Get a list of hosts
    declare -a hostlist=(`scontrol show hostname $SLURM_NODELIST `)
