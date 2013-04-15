@@ -289,9 +289,18 @@ elif [ x"$MODE" == "ximpi_hydra" ]; then
 
     # Let's assume host runs for now...clearly this must change when things start cooperating.
 
-    export I_MPI_OFA_ADAPTER_NAME=mlx4_0
-    export I_MPI_FABRICS=shm:ofa
+    if [ -z "$I_MPI_OFA_ADAPTER_NAME" ]; then
+	export I_MPI_OFA_ADAPTER_NAME=mlx4_0
+    fi
 
+    if [ -z "$I_MPI_FABRICS" ]; then
+
+    # export I_MPI_FABRICS=shm:ofa
+    # Updated on 3/13/2013 to use DAPL
+
+	export I_MPI_FABRICS=shm:dapl
+    fi
+    
 
 else
     # Some other MPI stack? fail.
@@ -557,6 +566,11 @@ elif [ x"$MODE" == "xmvapich2_ssh" ]; then
 
 elif [ x"$MODE" == "ximpi_hydra" ]; then
 
+    #Needed to handle large number of nodes
+    #Allow the user to set their own branch count if needed
+    if [ -z "$I_MPI_HYDRA_BRANCH_COUNT" ]; then
+     export I_MPI_HYDRA_BRANCH_COUNT=6000
+    fi
     $MPICH_HOME/intel64/bin/mpiexec.hydra -np $MY_NSLOTS -machinefile $hostfile_tacc $MY_MPIRUN_OPTIONS $fullcmd "$@"
     res=$?
 
