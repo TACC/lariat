@@ -2,12 +2,12 @@
 # -*-sh-*-
 # ---------------------------------------------------------------------
 # Stampede Version (SLURM)
-#
-# $Id:$
 # ---------------------------------------------------------------------
 # set -x
 
 # Figure out which system we are on.
+
+ibrunDir=`dirname $0`
 
 nlocal=$(hostname -f)
 nA=($(builtin echo "$nlocal" | tr '.' ' '))
@@ -15,7 +15,6 @@ first=${nA[0]}
 SYSHOST=${nA[1]}
 
 fqdn="$SYSHOST.tacc.utexas.edu"
-
 
 ADMIN_stampede="/home1/moduleData/reverseMapD"
 ADMIN_ls4="/home1/moduleData/reverseMapD"
@@ -29,18 +28,26 @@ eval "CPN=\$CPN_$SYSHOST"
 
 NUMCORES=$((CPN*2))
 
-# Temporary fix to disable limic: 12/6/12
+# ------------------------------
+# Default Environment Settings
+# ------------------------------
 
-if [ -z "$MV2_SMP_USE_LIMIC2" ]; then
-    export MV2_SMP_USE_LIMIC2=0
-fi
+# 12/16/12 (ks): Temporary fix to disable limic
+# 02/26/13 (ks): limic re-enabled by default based on bug fix from OSU
 
-# Temporary fix to disable UD hybrid: 01/04/13
+#if [ -z "$MV2_SMP_USE_LIMIC2" ]; then
+#    export MV2_SMP_USE_LIMIC2=0
+#fi
+
+# 01/14/13 (ks): Temporary fix to disable UD hybrid
 
 if [ -z "$MV2_USE_UD_HYBRID" ]; then
     export MV2_USE_UD_HYBRID=0
 fi
 
+if [ -z "$MV2_USE_OLD_BCAST" ]; then
+    export MV2_USE_OLD_BCAST=1
+fi
 
 ## Look through all the arguments to ibrun.  If the user asked for help (-h)
 ## print the help and then exit immediately.
@@ -282,9 +289,18 @@ elif [ x"$MODE" == "ximpi_hydra" ]; then
 
     # Let's assume host runs for now...clearly this must change when things start cooperating.
 
-    export I_MPI_OFA_ADAPTER_NAME=mlx4_0
-    export I_MPI_FABRICS=shm:ofa
+    if [ -z "$I_MPI_OFA_ADAPTER_NAME" ]; then
+	export I_MPI_OFA_ADAPTER_NAME=mlx4_0
+    fi
 
+    if [ -z "$I_MPI_FABRICS" ]; then
+
+    # export I_MPI_FABRICS=shm:ofa
+    # Updated on 3/13/2013 to use DAPL
+
+	export I_MPI_FABRICS=shm:dapl
+    fi
+    
 
 else
     # Some other MPI stack? fail.
@@ -454,9 +470,13 @@ pe_fn=`mktemp $home_batch_dir/job.$BATCH_JOB_ID.usage.XXXXXXXX`
 mv $pe_fn $pe_fn.lua
 pe_fn=$pe_fn.lua
 
-checkExec --map $pe_mapD -- $fullcmd "$@"
+if [ -x "$ibrunDir/checkExec" ]; then
+  $ibrunDir/checkExec --map $pe_mapD -- $fullcmd "$@"
+fi
 
-parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $fullcmd "$@"
+if [ -x "$ibrunDir/parseLDD" ]; then
+  $ibrunDir/parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $fullcmd "$@"
+fi
 
 
 ## Modify $hostfile_tacc if user passed special options to ibrun
@@ -546,6 +566,11 @@ elif [ x"$MODE" == "xmvapich2_ssh" ]; then
 
 elif [ x"$MODE" == "ximpi_hydra" ]; then
 
+    #Needed to handle large number of nodes
+    #Allow the user to set their own branch count if needed
+    if [ -z "$I_MPI_HYDRA_BRANCH_COUNT" ]; then
+     export I_MPI_HYDRA_BRANCH_COUNT=6000
+    fi
     $MPICH_HOME/intel64/bin/mpiexec.hydra -np $MY_NSLOTS -machinefile $hostfile_tacc $MY_MPIRUN_OPTIONS $fullcmd "$@"
     res=$?
 
@@ -574,7 +599,9 @@ fi
 pe_endTime=`date +%s`
 pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
 
-parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn -- $fullcmd "$@"
+if [ -x "$ibrunDir/parseLDD" ]; then
+  $ibrunDir/parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn -- $fullcmd "$@"
+fi
 
 if [ $res -ne 0 ]; then
     echo "TACC: MPI job exited with code: $res"

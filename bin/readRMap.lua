@@ -1,8 +1,10 @@
 require("strict")
 require("fileOps")
+require("declare")
+require("string_split")
 local Dbg = require("Dbg")
 
-reverseMapT = {}
+reverseMapT = false
 
 function readRMap(reverseMapD)
 
@@ -10,21 +12,40 @@ function readRMap(reverseMapD)
    dbg.start("readRMap(",reverseMapD,")")
    -- open reverseMap file and read it in.
 
-   local reverseMapFn = pathJoin(reverseMapD,"reverseMapT.lua")
-   local rmF          = io.open(reverseMapFn,"r")
-   if (not rmF) then
-      reverseMapFn = pathJoin(reverseMapD,"reverseMapT.old.lua")
-      rmF          = io.open(reverseMapFn,"r")
-   end
+   local mapT = {}
 
-   if (rmF) then
-      local whole  = rmF:read("*all")
-      rmF:close()
+   --declare("reverseMapT",{})
+   for dir in reverseMapD:split(":") do
 
-      assert(loadstring(whole))()
+      local reverseMapFn = pathJoin(dir,"reverseMapT.lua")
+      local rmF          = io.open(reverseMapFn,"r")
+      dbg.print("(1) fn: ", reverseMapFn, ", found: ", tostring((not (not rmF))),"\n")
+      if (not rmF) then
+         reverseMapFn = pathJoin(dir,"reverseMapT.old.lua")
+         rmF          = io.open(reverseMapFn,"r")
+         dbg.print("(2) fn: ", reverseMapFn, ", found: ", tostring((not (not rmF))),"\n")
+      end
+      
+      if (rmF) then
+         local whole  = rmF:read("*all")
+         rmF:close()
+         local func, msg = loadstring(whole)
+         if (func) then
+            func()
+         else
+            dbg.print("Problem with reverse map: ",msg,"\n")
+         end
+      else
+         dbg.print("Unable to open rmap file\n")
+      end
+
+      local rmapT = _G.reverseMapT
+      for k, v in pairs(rmapT) do
+         mapT[k] = v
+      end
    end
 
    dbg.fini()
-   return reverseMapT 
+   return mapT 
 
 end

@@ -14,6 +14,7 @@ local mod       = math.mod
 execNameA       = {}
 
 require("strict")
+local Dbg          = require("Dbg")
 local BeautifulTbl = require("BeautifulTbl")
 local Optiks       = require("Optiks")
 local Version      = "1.4"
@@ -21,105 +22,75 @@ local master       = {}
 require("serializeTbl")
 require("string_split")
 require("fileOps")
+require("declare")
 require("VarDump")
-userT = {}
+sgeT = false
 local Dbg = require("Dbg")
-------------------------------------------------------------------------
--- This function returns an iterator:  The iterator returns the next
--- username and homeDir or nil if there are no users left.
 
-local largeBSS = 1024*1024*1024
 
-function processPWRec(fn)
-   io.input(fn)
-   return 
-     function()
-        local line = io.read()
-        if (line == nil) then
-           return nil
-        end
-        local a    = {}
-        for v in line:split(':') do
-           a[#a + 1] = v
-        end
-        return a[1], a[6]
-     end
-end
+function processSgeT(sgeT, accT, execT, libT)
+   local dbg = Dbg:dbg()
+   dbg.start("processSgeT(sgeT, accT, execT, libT)")
+   for k, vA in pairs(sgeT) do
+      dbg.print("jobID: ",k,"\n")
+      for i = 1, #vA do
+         local v          = vA[i]
+         local execType   = v.execType
+         local su         = v.numCores * v.runTime / 3600.0
+         local t          = accT[execType] or { num = 0, su = 0, user = {} }
+         t.num            = t.num + 1
+         t.su             = t.su  + su
+         t.user[v.user]   = (t.user[v.user] or 0) + 1
+         accT[execType]   = t
+         
+         local prefix = ""
+         if (execType:find("^system:"))then
+            accT.system.num = accT.system.num + 1
+            accT.system.su  = accT.system.su  + su
+            prefix = "(" .. execType:sub(8) ..")"
+         end
 
-function processLuaRecord(fn, sgeT, accT, libT)
-   local f=io.open(fn, "r")
-   if (f == nil) then return end
-   local whole = f:read("*all")
-   f:close()
-   if (whole:sub(1,1) == "{") then
-      whole = "userT="..whole
-   end
+         if (execType:find("^user:binary"))then
+            accT.user.num = accT.user.num + 1
+            accT.user.su  = accT.user.su  + su
+         end
 
-   f=loadstring(whole)
-   if (not f) then return  end
-   f()
+         if (execType:find("^user:script"))then
+            accT.script.num = accT.script.num + 1
+            accT.script.su  = accT.script.su  + su
+         end
+         
+         local exec      = prefix .. barefilename(v.exec)
 
-   local jobID = userT.jobID
-   sgeT[jobID] = {}
-   for k, v in pairs(userT) do
-      sgeT[jobID][k] = v
-   end
-
-   local su = userT.numCores * userT.runTime / 3600.0
-
-   local t = accT[userT.execType] or { num = 0, su = 0, user = {} }
-
-   t.num   = t.num + 1
-   t.su    = t.su  + su
-   t.user[userT.user] = (t.user[userT.user] or 0) + 1
-   accT[userT.execType] = t
-
-   local sizeT = userT.sizeT or {bss = 0}
-   local bss = tonumber(sizeT.bss or 0)
-   if (bss > largeBSS) then
-      accT.bss.num = accT.bss.num + 1
-      accT.bss.jobID[jobID] = {userT.user, bss/(1024*1024*1024)}
-   end
-
-   if (userT.execType:find("^system:")) then
-      accT.system.num = accT.system.num + 1
-      accT.system.su  = accT.system.su  + su
-   end
-
-   if (next(userT.pkgT) ~= nil ) then
-      recordLibT(su, userT.pkgT, libT)
-   end
-end
-
-function processExecT(sgeT, execT)
-   for k,v in pairs(sgeT) do
-      if (v.execType == "user:binary" or v.execType:find("^system:")) then
-         local exec = barefilename(v.exec)
-         local t = execT[exec] or { num=0, su = 0, job={id="", su = 0},userT={}}
-         local su = v.numCores * v.runTime /3600.0
-         t.su  = t.su  + su
-         t.num = t.num + 1
+         local t         = execT[exec] or { num=0, su = 0, job={id="", su = 0},userT={}}
+         t.su            = t.su  + su
+         t.num           = t.num + 1
          t.userT[v.user] = 1
-
          if (su > t.job.su) then
             t.job.su = su
             t.job.id = v.jobID
          end
-         execT[exec] = t
+         execT[exec]     = t
+         
+         if (next(v.pkgT) ~= nil) then
+            recordLibT(su, v.pkgT, libT)
+         end
       end
    end
+   dbg.fini()
 end
+
 
 function recordLibT(su, pkgT, libT)
    for k, v in pairs(pkgT) do
-      local t = libT[k] or { su = 0.0, flavor = {}, num = 0}
-      t.su  = t.su  + su
-      t.num = t.num + 1
+      local t            = libT[k] or { su = 0.0, flavor = {}, num = 0}
+      t.su               = t.su  + su
+      t.num              = t.num + 1
       t.flavor[v.flavor] = (t.flavor[v.flavor] or 0 ) + su
-      
-      libT[k] = t
+      libT[k]            = t
    end
 end
+
 
 function reportLibT(libT)
    local a = {}
@@ -144,12 +115,8 @@ function reportLibT(libT)
       b[#b+1]  = {a[i].name, su, tostring(a[i].num)}
    end
 
-
-   
-
    local bt = BeautifulTbl:new{tbl=b}
    io.stdout:write(bt:build_tbl(),"\n");
-
 end
 
 
@@ -168,7 +135,6 @@ function displayExecT(a, msg)
    end
    local bt = BeautifulTbl:new{tbl=b}
    io.stdout:write(bt:build_tbl(),"\n");
-
 end
 
 function reportTop(execT, execFile)
@@ -184,9 +150,12 @@ function reportTop(execT, execFile)
 
    -- Report Top SU jobs
 
+   local masterTbl = masterTbl()
+   local count     = tonumber(masterTbl.count)
+
    table.sort(a,function(x,y) return x.su > y.su end)
 
-   local n = math.min(20,#a)
+   local n = math.min(count,#a)
    
    --for i = 1, #a do
    --   print(i,",",a[i].su)
@@ -205,7 +174,7 @@ function reportTop(execT, execFile)
 
    table.sort(a,function(x,y) return x.num > y.num end)
 
-   local n = math.min(20,#a)
+   local n = math.min(count,#a)
    
    --for i = 1, #a do
    --   print(i,",",a[i].su)
@@ -243,63 +212,58 @@ function masterTbl()
 end
 
 function main()
-
-   local numTimes = 0
-   local iuser = 0
-   local unit  = 2
-   local fence = unit
-
-   local libT = {}
-   local sgeT = {}
-   local accT = {bss     = {num = 0, jobID = {}},
-                 system  = {num = 0, su   =  0},
+   local dbg   = Dbg:dbg()
+   local execT = {}
+   local libT  = {}
+   local accT  = { 
+      system  = {num = 0, su    =  0 },
+      user    = {num = 0, su    =  0 },
+      script  = {num = 0, su    =  0 },
    }
 
    options()
-   local masterTbl  = masterTbl()
-   local pargs      = masterTbl.pargs
 
-   for userName, homeDir in processPWRec("/etc/passwd") do
-      local dir = pathJoin(homeDir,".sge")
-      if ( isDir(dir)) then
-         iuser = iuser + 1
-      end
+   local masterTbl = masterTbl()
+   local pargs     = masterTbl.pargs
+   if (masterTbl.debug) then
+      dbg:activateDebug(1)
    end
-   local nusers = iuser
 
-   local activeT = {}
-   iuser = 0
-   for userName, homeDir in processPWRec("/etc/passwd") do
-      local dir = pathJoin(homeDir,".sge")
-      if ( isDir(dir)) then
-         iuser = iuser + 1
-         local j = floor(iuser/nusers*100)
-         if ( j > fence) then
-            io.stderr:write("#")
-            io.stderr:flush()
-            fence = fence + unit
-         end
-         for file in lfs.dir(dir) do
-            if (file:sub(-4,-1) == ".lua") then
-               local fn = pathJoin(dir,file)
-               activeT[userName] = (activeT[userName] or 0) + 1
-               numTimes = numTimes + 1
-               processLuaRecord(fn, sgeT, accT, libT)
-           end
-         end
-      end
+   dbg.start("LariatReport()")
+
+   --declare("sgeT",{})
+
+   for i = 1,#pargs do
+      assert(loadfile(pargs[i]))()
+      processSgeT(sgeT, accT, execT, libT)
    end
-   io.stdout:write("\n")
 
-   local s = serializeTbl{indent=true, name="accT", value=accT}
-   io.stdout:write("\n",s,"\n")
-               
-   local execT = {}
-   processExecT(sgeT,execT)
+   local totalNum = accT.system.num + accT.user.num + accT.script.num
+   local totalSU  = accT.system.su  + accT.user.su  + accT.script.su
 
+   local b = {}
+   b[#b+1] = { "Kind"," Number of Jobs", "% Jobs", " Number of SU", "% SU" }
+   b[#b+1] = { "----","---------------", "------", "-------------", "----" }
+   
+   local kindA = {"system", "user", "script"}
+
+   for i = 1,#kindA do
+      local a    = {}
+      local kind = kindA[i]
+      a[#a+1]    = kind
+      a[#a+1]    = tostring(accT[kind].num)
+      a[#a+1]    = string.format("%6.2f",tostring(accT[kind].num/totalNum*100.0))
+      a[#a+1]    = tostring(accT[kind].su)
+      a[#a+1]    = string.format("%6.2f",tostring(accT[kind].su/totalSU*100.0))
+      b[#b+1]    = a
+   end
+   local bt = BeautifulTbl:new{tbl=b}
+   io.stdout:write(bt:build_tbl(),'\n')
+   
    reportLibT(libT)   
 
    reportTop(execT, masterTbl.execFile)
+   dbg.fini()
 
 end
 function options()
@@ -313,6 +277,20 @@ function options()
       action  = 'store',
       default = nil,
       help    = "File containing a list of executables in a lua Table execNameA={}",
+   }
+
+   cmdlineParser:add_option{ 
+      name    = {'-n','--top'},
+      dest    = 'count',
+      action  = 'store',
+      default = "20",
+      help    = "The number of executables to report",
+   }
+   cmdlineParser:add_option{ 
+      name    = {'-d','--debug'},
+      dest    = 'debug',
+      action  = 'store_true',
+      help    = "debug flag",
    }
 
 
