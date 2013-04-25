@@ -5,8 +5,8 @@ today=$(date +%F)
 fn30="LariatReport-last30-$today.txt"
 
 
-/scratch/projects/lariatData/analyze_LDDjob $(find . -name 'lariatData-sgeT*.lua' -mmin -43200 ) > last30/$fn30
+/scratch/projects/lariatData/analyze_LDDjob $(find . -name 'lariatData-sgeT*.lua' -mmin -43200 ) > /scratch/projects/lariatData/last30/$fn30
 
 fn365="LariatReport-last365-$today.txt"
 
-/scratch/projects/lariatData/analyze_LDDjob $(find . -name 'lariatData-sgeT*.lua' -mmin -525600 ) > last365/$fn365
+/scratch/projects/lariatData/analyze_LDDjob $(find . -name 'lariatData-sgeT*.lua' -mmin -525600 ) > /scratch/projects/lariatData/last365/$fn365
