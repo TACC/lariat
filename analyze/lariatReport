@@ -29,8 +29,8 @@ local Dbg = require("Dbg")
 
 IgnoreLibA = {
    "^liblimic",
-   "^libmpi.so"
-   "^libmpich.so"
+   "^libmpi.so",
+   "^libmpich.so",
 }
 
 
