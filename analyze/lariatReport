@@ -27,6 +27,12 @@ require("VarDump")
 sgeT = false
 local Dbg = require("Dbg")
 
+IgnoreLibA = {
+   "^liblimic",
+   "^libmpi.so"
+}
+
+
 
 function processSgeT(sgeT, accT, execT, libT)
    local dbg = Dbg:dbg()
@@ -82,20 +88,22 @@ end
 
 
 function keepLib(v)
-   libA = (v or {}).libA
+   local libA = (v or {}).libA
    if (not libA or next(libA) ~= nil) then
       return true
    end
 
-   for i = 1,libA do
-      lib = libA[i]
-      if (lib:find("^liblimic")) then
-         return false
+   for i = 1,#libA do
+      local lib = libA[i]
+      for k = 1, #IgnoreLibA do
+         local v = IgnoreLibA[k]
+         if (lib:find(v)) then
+            return false
+         end
       end
    end
    return true
 end
-
 
 function recordLibT(su, pkgT, libT)
    for k, v in pairs(pkgT) do
