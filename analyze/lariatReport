@@ -30,6 +30,7 @@ local Dbg = require("Dbg")
 IgnoreLibA = {
    "^liblimic",
    "^libmpi.so"
+   "^libmpich.so"
 }
 
 
@@ -134,8 +135,8 @@ function reportLibT(libT)
    local fmt = "%7.2f"
    local b   = {}
 
-   b[#b+1] = { "Library Module Name ","Total SU Used ", "Number of Jobs" }
-   b[#b+1] = { "------------------- ","------------- ", "--------------" }
+   b[#b+1] = { "Shared Library Module","Total SU Used ", "Number of Jobs" }
+   b[#b+1] = { "---------------------","------------- ", "--------------" }
    for i = 1, #a do
       local su = fmt:format(a[i].su)
       b[#b+1]  = {a[i].name, su, tostring(a[i].num)}
