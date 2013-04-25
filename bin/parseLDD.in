@@ -32,20 +32,11 @@ ignoreT = {
    getmode_affinity  = 1,
 }
 
-DirKeepPass1 = {
-   "^/opt/apps/",
-   "^/share1/apps",
-   "^/work/00515/mclay/apps",
+IgnoreDirA = {
+  "/opt/apps/limic"  
 }
-   
 
-IgnoreModA = {
-   "^intel/",
-   "^gcc/",
-   "^mvapich/",
-   "^mvapich2/",
-   "^openmpi/",
-}   
+
 
 function isExec(fn)
    if (fn == nil) then return false end
@@ -53,9 +44,9 @@ function isExec(fn)
    return result
 end
 
-function keepModule(mod)
-   for i = 1, #IgnoreModA do
-      if (mod:find(IgnoreModA[i])) then
+function keepModule(dir, mod)
+   for i = 1, #IgnoreDirA do
+      if (dir:find(IgnoreDirA[i])) then
          return false
       end
    end
@@ -190,12 +181,7 @@ function main()
    for l in ldd:split("\n") do
       l = l:gsub(".*=> *","")
       l = l:gsub("%(0x.*$","")
-      for d = 1, #DirKeepPass1 do
-         if (l:find(DirKeepPass1[d]) == 1) then
-            libPathA[#libPathA+1] = l
-            break;
-         end
-      end
+      libPathA[#libPathA+1] = l
    end
 
    userT.sizeT = { text = 0, data = 0, bss = 0}
@@ -215,8 +201,9 @@ function main()
 
    for i = 1, #libPathA do
       local dir, lib = splitFileName(libPathA[i])
-      local pkg = reverseMapT[regularize(dir)]
-      if (pkg and keepModule(pkg.pkg)) then
+      local rdir     = regularize(dir)
+      local pkg      = reverseMapT[rdir]
+      if (pkg and keepModule(rdir, pkg.pkg)) then
          local t       = pkgT[pkg.pkg] or {}
          local libA    = t.libA or {}
          t.flavor      = pkg.flavor
