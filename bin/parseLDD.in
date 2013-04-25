@@ -257,10 +257,11 @@ function options()
    }
 
    cmdlineParser:add_option{ 
-      name   = {'-m','--reverseMap', '--map'},
-      dest   = 'reverseMapD',
-      action = 'store',
-      help   = "reverseMap directorys",
+      name    = {'-m','--reverseMap', '--map'},
+      dest    = 'reverseMapD',
+      action  = 'store',
+      default = '/tmp/moduleData/reverseMapD',
+      help    = "reverseMap directory",
    }
 
    local optionTbl, pargs = cmdlineParser:parse(arg)
