@@ -17,6 +17,7 @@ SYSHOST=${nA[1]}
 fqdn="$SYSHOST.tacc.utexas.edu"
 
 ADMIN_stampede="/tmp/moduleData/reverseMapD:/home1/moduleData/XSEDE/reverseMapD"
+ADMIN_stampede="/home1/moduleData/reverseMapD"
 ADMIN_ls4="/home1/moduleData/reverseMapD"
 ADMIN_longhorn="/share/tacc_admin/reverseMapD"
 
