@@ -21,9 +21,8 @@ local getenv    = os.getenv
 local concatTbl = table.concat
 s_master        = {}
 ignoreT = {
-   tacc_affinity     = 1,
-   getmode_affinity  = 1,
-   env               = 1,
+   tacc_affinity                       = 1,
+   env                                 = 1,
 }
 
 mpiT = {
@@ -155,10 +154,10 @@ function main()
    
    dbg.start("checkExec(\""..concatTbl(pargs,"\", \"").."\")")
 
-
    for i = 1, #pargs do
       local arg = pargs[i]
-      if (not (ignoreT[arg] or arg:find("=") or arg:sub(1,1) == "-")) then
+      local fn  = barefilename(arg)
+      if (not (ignoreT[fn] or arg:find("=") or arg:sub(1,1) == "-")) then
          cmd = arg
          break;
       end
@@ -174,7 +173,7 @@ function main()
    end
 
    if (masterTbl.reverseMapD == nil) then
-      masterTbl.reverseMapD = "/home1/moduleData/reverseMapD"
+      masterTbl.reverseMapD = "/tmp/moduleData/reverseMapD:/home1/moduleData/XSEDE/reverseMapD"
    end
 
 
@@ -264,7 +263,7 @@ function options()
    }
 
    cmdlineParser:add_option{ 
-      name   = {'-d','--debug'},
+      name   = {'-D','--debug'},
       dest   = 'debug',
       action = 'store_true',
    }
@@ -274,7 +273,7 @@ function options()
       name   = {'-m','--reverseMap', '--map'},
       dest   = 'reverseMapD',
       action = 'store',
-      help   = "reverseMap directorys",
+      help   = "reverseMap directories",
    }
 
    local optionTbl, pargs = cmdlineParser:parse(arg)

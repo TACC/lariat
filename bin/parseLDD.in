@@ -66,9 +66,6 @@ function masterTbl()
    return master
 end
 
-
-
-
 function queueSystemMapper()
    local queueType = "SLURM"
    local sysT      = {}
@@ -97,10 +94,6 @@ function queueSystemMapper()
 end
 
       
-      
-
-
-
 function main()
 
    options()
@@ -260,7 +253,7 @@ function options()
       name    = {'-m','--reverseMap', '--map'},
       dest    = 'reverseMapD',
       action  = 'store',
-      default = '/tmp/moduleData/reverseMapD',
+      default = '/tmp/moduleData/reverseMapD:/home1/moduleData/XSEDE/reverseMapD',
       help    = "reverseMap directory",
    }
 
