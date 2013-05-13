@@ -132,8 +132,8 @@ function reportLibT(libT)
    local fmt = "%7.2f"
    local b   = {}
 
-   b[#b+1] = { "Shared Library Module","Total SU Used ", "Number of Jobs" }
-   b[#b+1] = { "---------------------","------------- ", "--------------" }
+   b[#b+1] = { "Shared Library Module","Total SU ", "#Jobs" }
+   b[#b+1] = { "---------------------","-------- ", "-----" }
    for i = 1, #a do
       local su = fmt:format(a[i].su)
       b[#b+1]  = {a[i].name, su, tostring(a[i].num)}
@@ -150,8 +150,8 @@ function displayExecT(a, msg)
 
    print ("\n",msg,":\n")
 
-   b[#b+1] = {"Exec Name", "Total SU used", "Number of Jobs", "Job ID", "Number of Users"}
-   b[#b+1] = {"---------", "-------------", "--------------", "------", "---------------"}
+   b[#b+1] = {"Exec Name", "Total SU", "#Jobs", "Job ID", "#Users"}
+   b[#b+1] = {"---------", "--------", "-----", "------", "------"}
 
    for i = 1,#a do
       local su = fmt:format(a[i].su)
@@ -266,8 +266,8 @@ function main()
    local totalSU  = accT.system.su  + accT.user.su  + accT.script.su
 
    local b = {}
-   b[#b+1] = { "Kind"," Number of Jobs", "% Jobs", " Number of SU", "% SU" }
-   b[#b+1] = { "----","---------------", "------", "-------------", "----" }
+   b[#b+1] = { "Kind"," #Jobs", "% Jobs", " #SU", "% SU" }
+   b[#b+1] = { "----","------", "------", "----", "----" }
    
    local kindA = {"system", "user", "script"}
 
