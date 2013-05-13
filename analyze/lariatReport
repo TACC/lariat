@@ -276,9 +276,9 @@ function main()
       local kind = kindA[i]
       a[#a+1]    = kind
       a[#a+1]    = tostring(accT[kind].num)
-      a[#a+1]    = string.format("%6.2f",tostring(accT[kind].num/totalNum*100.0))
-      a[#a+1]    = tostring(accT[kind].su)
-      a[#a+1]    = string.format("%6.2f",tostring(accT[kind].su/totalSU*100.0))
+      a[#a+1]    = string.format("%6.2f",accT[kind].num/totalNum*100.0)
+      a[#a+1]    = string.format("%11.2f",accT[kind].su)
+      a[#a+1]    = string.format("%6.2f",accT[kind].su/totalSU*100.0)
       b[#b+1]    = a
    end
    local bt = BeautifulTbl:new{tbl=b, justifyT={"L","R","R","R","R"}}
