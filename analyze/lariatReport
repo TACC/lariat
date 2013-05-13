@@ -129,7 +129,7 @@ function reportLibT(libT)
    end
 
    table.sort(a,function(x,y) return x.su > y.su end)
-   local fmt = "%-7.2f"
+   local fmt = "%7.2f"
    local b   = {}
 
    b[#b+1] = { "Shared Library Module","Total SU Used ", "Number of Jobs" }
@@ -146,7 +146,7 @@ end
 
 function displayExecT(a, msg)
    local b = {}
-   local fmt = "%-7.2f"
+   local fmt = "%7.2f"
 
    print ("\n",msg,":\n")
 
@@ -276,9 +276,9 @@ function main()
       local kind = kindA[i]
       a[#a+1]    = kind
       a[#a+1]    = tostring(accT[kind].num)
-      a[#a+1]    = string.format("%-6.2f",tostring(accT[kind].num/totalNum*100.0))
+      a[#a+1]    = string.format("%6.2f",tostring(accT[kind].num/totalNum*100.0))
       a[#a+1]    = tostring(accT[kind].su)
-      a[#a+1]    = string.format("%-6.2f",tostring(accT[kind].su/totalSU*100.0))
+      a[#a+1]    = string.format("%6.2f",tostring(accT[kind].su/totalSU*100.0))
       b[#b+1]    = a
    end
    local bt = BeautifulTbl:new{tbl=b, justifyT={"L","R","R","R","R"}}
