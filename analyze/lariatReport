@@ -139,7 +139,7 @@ function reportLibT(libT)
       b[#b+1]  = {a[i].name, su, tostring(a[i].num)}
    end
 
-   local bt = BeautifulTbl:new{tbl=b}
+   local bt = BeautifulTbl:new{tbl=b, justifyT = {"Left", "Right", "Right"}}
    io.stdout:write(bt:build_tbl(),"\n");
 end
 
@@ -157,7 +157,7 @@ function displayExecT(a, msg)
       local su = fmt:format(a[i].su)
       b[#b+1] = {a[i].name, su, tostring(a[i].num),a[i].id,tostring(a[i].numUsers)}
    end
-   local bt = BeautifulTbl:new{tbl=b}
+   local bt = BeautifulTbl:new{tbl=b, justifyT={"Left", "Right", "Right", "Right","Right"}}
    io.stdout:write(bt:build_tbl(),"\n");
 end
 
@@ -281,7 +281,7 @@ function main()
       a[#a+1]    = string.format("%-6.2f",tostring(accT[kind].su/totalSU*100.0))
       b[#b+1]    = a
    end
-   local bt = BeautifulTbl:new{tbl=b}
+   local bt = BeautifulTbl:new{tbl=b, justifyT={"L","R","R","R","R"}}
    io.stdout:write(bt:build_tbl(),'\n')
    
    reportLibT(libT)   
