@@ -17,6 +17,7 @@ require("strict")
 local BeautifulTbl = require("BeautifulTbl")
 local Optiks       = require("Optiks")
 local Version      = "1.4"
+local load         = (_VERSION == "Lua 5.1") and loadstring or load
 local master       = {}
 require("serializeTbl")
 require("string_split")
@@ -55,7 +56,7 @@ function processLuaRecord(fn, sgeT, accT, libT)
       whole = "userT="..whole
    end
 
-   f=loadstring(whole)
+   f=load(whole)
    if (not f) then return  end
    f()
 

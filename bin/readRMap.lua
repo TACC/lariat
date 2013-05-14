@@ -5,6 +5,7 @@ require("string_split")
 local Dbg = require("Dbg")
 
 reverseMapT = false
+local load  = (_VERSION == "Lua 5.1") and loadstring or load
 
 function readRMap(reverseMapD)
 
@@ -29,7 +30,7 @@ function readRMap(reverseMapD)
       if (rmF) then
          local whole  = rmF:read("*all")
          rmF:close()
-         local func, msg = loadstring(whole)
+         local func, msg = load(whole)
          if (func) then
             func()
          else
