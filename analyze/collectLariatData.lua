@@ -20,6 +20,7 @@ local Optiks       = require("Optiks")
 local Version      = "1.4"
 local concatTbl    = table.concat
 local json         = require("json")
+local load         = (_VERSION == "Lua 5.1") and loadstring or load
 local s_master     = {}
 local ProgressBar  = require("ProgressBar")
 require("serializeTbl")
@@ -74,7 +75,7 @@ function processLuaRecord(fn, activeJobT, sgeT)
       whole = "userT="..whole
    end
 
-   f=loadstring(whole)
+   f=load(whole)
    if (not f) then return  end
    f()
 

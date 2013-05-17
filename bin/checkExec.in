@@ -19,6 +19,7 @@ local Dbg       = require("Dbg")
 local Optiks    = require("Optiks")
 local getenv    = os.getenv
 local concatTbl = table.concat
+local load      = (_VERSION == "Lua 5.1") and loadstring or load
 s_master        = {}
 ignoreT = {
    tacc_affinity                       = 1,
@@ -68,7 +69,7 @@ function findEnvVersions(mpiStack, compiler)
    if (lmod_cmd == nil) then return sysT end
    local s        = capture("(" .. lmod_cmd .. " bash tablelist > /dev/null ) 2>&1 ")
 
-   assert(loadstring(s))()
+   assert(load(s))()
    sysT.mpi  = mpiStack .."/"..tostring(activeList[mpiStack])
    sysT.comp = compiler .."/"..tostring(activeList[compiler])
 
