@@ -32,6 +32,12 @@ IgnoreLibA = {
    "^libmpi.so",
    "^libmpich.so",
    "^libmpigf.so",
+   "^libfmpich.so",
+   "^libmpichcxx.so",
+   "^libmpichf90.so",
+   "^libmpich.so",
+   "^libmpl.so",
+   "^libopa.so",
 }
 
 
