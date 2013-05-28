@@ -45,10 +45,10 @@ GS_PKGS:
 	cp `findLuaPkgs $(REQUIRED_PKGS)` $(GLOBAL_SRCS)
 
 GS_PRGMS: $(STANDALONE_PRGM)
-	$(MAKE) FILELIST="$^" DIRLOC=$(GLOBAL_SRCS)    __installMe
-	$(RM) $(GLOBAL_SRCS)/*.sge
-	mv $(GLOBAL_SRCS)/ibrun.slurm $(GLOBAL_SRCS)/ibrun
-	mv $(GLOBAL_SRCS)/tacc_affinity.slurm $(GLOBAL_SRCS)/tacc_affinity
+	-for i in $^; do                                          \
+          bareN=$${i##*/};                                        \
+          cp $$i $(GLOBAL_SRCS);                                  \
+        done
 
 
 $(DIRLIST) :

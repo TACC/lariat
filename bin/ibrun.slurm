@@ -16,7 +16,7 @@ SYSHOST=${nA[1]}
 
 fqdn="$SYSHOST.tacc.utexas.edu"
 
-ADMIN_stampede="/home1/moduleData/reverseMapD"
+ADMIN_stampede="/tmp/moduleData/reverseMapD:/home1/moduleData/XSEDE/reverseMapD"
 ADMIN_ls4="/home1/moduleData/reverseMapD"
 ADMIN_longhorn="/share/tacc_admin/reverseMapD"
 
@@ -48,6 +48,20 @@ fi
 if [ -z "$MV2_USE_OLD_BCAST" ]; then
     export MV2_USE_OLD_BCAST=1
 fi
+
+# 4/16/13 - faster startup times for 1.9b and higher
+
+if [ -z "$MV2_HOMOGENEOUS_CLUSTER" ];then
+    export MV2_HOMOGENEOUS_CLUSTER=1
+fi
+
+# 4/16/13 - support for more than 128 MICs with impi
+
+if [ -z "$I_MPI_HYDRA_BRANCH_COUNT" ]; then
+ export I_MPI_HYDRA_BRANCH_COUNT=6000
+fi
+
+
 
 ## Look through all the arguments to ibrun.  If the user asked for help (-h)
 ## print the help and then exit immediately.
@@ -566,11 +580,6 @@ elif [ x"$MODE" == "xmvapich2_ssh" ]; then
 
 elif [ x"$MODE" == "ximpi_hydra" ]; then
 
-    #Needed to handle large number of nodes
-    #Allow the user to set their own branch count if needed
-    if [ -z "$I_MPI_HYDRA_BRANCH_COUNT" ]; then
-     export I_MPI_HYDRA_BRANCH_COUNT=6000
-    fi
     $MPICH_HOME/intel64/bin/mpiexec.hydra -np $MY_NSLOTS -machinefile $hostfile_tacc $MY_MPIRUN_OPTIONS $fullcmd "$@"
     res=$?
 

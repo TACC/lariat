@@ -5,6 +5,7 @@ require("string_split")
 local Dbg = require("Dbg")
 
 reverseMapT = false
+local load  = (_VERSION == "Lua 5.1") and loadstring or load
 
 function readRMap(reverseMapD)
 
@@ -16,7 +17,7 @@ function readRMap(reverseMapD)
 
    --declare("reverseMapT",{})
    for dir in reverseMapD:split(":") do
-
+      _G.reverseMapT = false
       local reverseMapFn = pathJoin(dir,"reverseMapT.lua")
       local rmF          = io.open(reverseMapFn,"r")
       dbg.print("(1) fn: ", reverseMapFn, ", found: ", tostring((not (not rmF))),"\n")
@@ -29,7 +30,7 @@ function readRMap(reverseMapD)
       if (rmF) then
          local whole  = rmF:read("*all")
          rmF:close()
-         local func, msg = loadstring(whole)
+         local func, msg = load(whole)
          if (func) then
             func()
          else
@@ -40,8 +41,10 @@ function readRMap(reverseMapD)
       end
 
       local rmapT = _G.reverseMapT
-      for k, v in pairs(rmapT) do
-         mapT[k] = v
+      if (rmapT and next(rmapT) ~= nil) then
+         for k, v in pairs(rmapT) do
+            mapT[k] = v
+         end
       end
    end
 
