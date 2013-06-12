@@ -18,7 +18,7 @@ local Dbg          = require("Dbg")
 local BeautifulTbl = require("BeautifulTbl")
 local Optiks       = require("Optiks")
 local Version      = "1.4"
-local master       = {}
+local s_master     = {}
 require("serializeTbl")
 require("string_split")
 require("fileOps")
@@ -152,19 +152,33 @@ end
 
 
 function displayExecT(a, msg)
-   local b = {}
-   local fmt = "%7.2f"
+   local masterTbl = masterTbl()
+   local b         = {}
+   local fmt       = "%7.2f"
+   local dplyMU   = masterTbl.maxUser
 
    print ("\n",msg,":\n")
 
-   b[#b+1] = {"Exec Name", "Total SU", "#Jobs", "Job ID", "#Users", " maxUser" }
-   b[#b+1] = {"---------", "--------", "-----", "------", "------", " -------" }
+   b[1] = {"Exec Name", "Total SU", "#Jobs", "Job ID", "#Users" }
+   b[2] = {"---------", "--------", "-----", "------", "------" }
+   local justifyA = {"Left", "Right", "Right", "Right","Right"}
+   if (dplyMU) then
+      b[1][#b[1]+1] = " maxUser" 
+      b[2][#b[2]+1] = " -------" 
+      justifyA[#justifyA + 1] = "Left"
+   end
 
    for i = 1,#a do
       local su = fmt:format(a[i].su)
-      b[#b+1] = {a[i].name, su, tostring(a[i].num),a[i].id,tostring(a[i].numUsers), a[i].maxUser}
+      b[#b+1] = {a[i].name, su, tostring(a[i].num),a[i].id,tostring(a[i].numUsers)}
+      if (dplyMU) then
+         b[#b][#b[#b]+1] = a[i].maxUser
+      end
    end
-   local bt = BeautifulTbl:new{tbl=b, justifyT={"Left", "Right", "Right", "Right","Right","Left"}}
+         
+
+   end
+   local bt = BeautifulTbl:new{tbl=b, justifyT=justifyA}
    io.stdout:write(bt:build_tbl(),"\n");
 end
 
@@ -246,7 +260,7 @@ function reportTop(execT, execFile)
 
 end
 function masterTbl()
-   return master
+   return s_master
 end
 
 function main()
@@ -323,6 +337,13 @@ function options()
       action  = 'store',
       default = "20",
       help    = "The number of executables to report",
+   }
+
+   cmdlineParser:add_option{ 
+      name    = {'--maxUser'},
+      dest    = 'maxUser',
+      action  = 'store_true',
+      help    = "report the max user",
    }
    cmdlineParser:add_option{ 
       name    = {'-d','--debug'},
