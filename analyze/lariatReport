@@ -79,10 +79,11 @@ function processSgeT(sgeT, accT, execT, libT)
          local t         = execT[exec] or { num=0, su = 0, job={id="", su = 0},userT={}}
          t.su            = t.su  + su
          t.num           = t.num + 1
-         t.userT[v.user] = 1
+         t.userT[v.user] = (t.userT[v.user] or 0) + su
          if (su > t.job.su) then
-            t.job.su = su
-            t.job.id = v.jobID
+            t.job.su   = su
+            t.job.id   = v.jobID
+            t.job.user = v.user
          end
          execT[exec]     = t
          
@@ -156,14 +157,14 @@ function displayExecT(a, msg)
 
    print ("\n",msg,":\n")
 
-   b[#b+1] = {"Exec Name", "Total SU", "#Jobs", "Job ID", "#Users"}
-   b[#b+1] = {"---------", "--------", "-----", "------", "------"}
+   b[#b+1] = {"Exec Name", "Total SU", "#Jobs", "Job ID", "#Users", " maxUser" }
+   b[#b+1] = {"---------", "--------", "-----", "------", "------", " -------" }
 
    for i = 1,#a do
       local su = fmt:format(a[i].su)
-      b[#b+1] = {a[i].name, su, tostring(a[i].num),a[i].id,tostring(a[i].numUsers)}
+      b[#b+1] = {a[i].name, su, tostring(a[i].num),a[i].id,tostring(a[i].numUsers), a[i].maxUser}
    end
-   local bt = BeautifulTbl:new{tbl=b, justifyT={"Left", "Right", "Right", "Right","Right"}}
+   local bt = BeautifulTbl:new{tbl=b, justifyT={"Left", "Right", "Right", "Right","Right","Left"}}
    io.stdout:write(bt:build_tbl(),"\n");
 end
 
@@ -171,11 +172,18 @@ function reportTop(execT, execFile)
    local a = {}
    for k,v in pairs(execT) do
       local t = v.userT
-      local icount = 0
-      for _, _ in next, t do
+      local icount  = 0
+      local maxSU   = 0
+      local maxUser = ""
+      for k,v in pairs(t) do
          icount = icount + 1
+         if (v > maxSU) then
+            maxSU = v
+            maxUser = k
+         end
       end
-      a[#a+1] = {name=k, su=v.su, num=v.num, id=v.job.id, numUsers=icount}
+
+      a[#a+1] = {name=k, su=v.su, num=v.num, id=v.job.id, numUsers=icount, maxUser=maxUser}
    end
 
    -- Report Top SU jobs
