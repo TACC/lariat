@@ -175,9 +175,7 @@ function displayExecT(a, msg)
          b[#b][#b[#b]+1] = a[i].maxUser
       end
    end
-         
 
-   end
    local bt = BeautifulTbl:new{tbl=b, justifyT=justifyA}
    io.stdout:write(bt:build_tbl(),"\n");
 end
