@@ -10,7 +10,8 @@ GLOBAL_SRCS     := $(HOME)/a/global_sources/ibrun
 MAINDIR         := configure.ac Makefile.in configure
 STANDALONE_PRGM := bin/build_env.pl  bin/checkExec.in bin/parseLDD.in  bin/getmode.sh  \
                    bin/ibrun.sge bin/ibrun.slurm bin/tacc_affinity.sge                 \
-                   bin/readRMap.lua bin/ibrun.symm bin/tacc_affinity.slurm
+                   bin/readRMap.lua bin/ibrun.symm bin/tacc_affinity.slurm \
+                   bin/offload_affinity.slurm
 VDATE		:= $(shell date +'%F %H:%M')
 
 REQUIRED_PKGS   :=                \
