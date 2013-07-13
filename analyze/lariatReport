@@ -163,8 +163,8 @@ function displayExecT(a, msg)
    b[2] = {"---------", "--------", "-----", "------", "------" }
    local justifyA = {"Left", "Right", "Right", "Right","Right"}
    if (dplyMU) then
-      b[1][#b[1]+1] = " maxUser" 
-      b[2][#b[2]+1] = " -------" 
+      b[1][#b[1]+1] = "maxUser" 
+      b[2][#b[2]+1] = "-------" 
       justifyA[#justifyA + 1] = "Left"
    end
 
