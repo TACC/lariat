@@ -184,7 +184,7 @@ function reportLibT(libT)
    end
 
    bt = BeautifulTbl:new{tbl=b, justifyT = {"Left", "Right", "left"}}
-   io.stdout:write(bt:build_tbl(),"\n");
+   io.stdout:write("\n\n",bt:build_tbl(),"\n");
 end
 
 
