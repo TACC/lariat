@@ -88,7 +88,7 @@ function processSgeT(sgeT, accT, execT, libT)
          execT[exec]     = t
          
          if (next(v.pkgT) ~= nil) then
-            recordLibT(su, v.pkgT, libT)
+            recordLibT(su, v, v.pkgT, libT)
          end
       end
    end
@@ -110,14 +110,20 @@ function keepLib(libA)
    return true
 end
 
-function recordLibT(su, pkgT, libT)
+function recordLibT(su, jobT, pkgT, libT)
    for k, v in pairs(pkgT) do
       if (keepLib(v.libA)) then
-         local t            = libT[k] or { su = 0.0, flavor = {}, num = 0}
-         t.su               = t.su  + su
-         t.num              = t.num + 1
-         t.flavor[v.flavor] = (t.flavor[v.flavor] or 0 ) + su
-         libT[k]            = t
+         local t             = libT[k] or { su = 0.0, flavor = {}, num = 0, jobT = {}}
+         t.su                = t.su  + su
+         t.num               = t.num + 1
+         t.flavor[v.flavor]  = (t.flavor[v.flavor] or 0 ) + su
+         local kk            = jobT.execType:find("^system:") and jobT.execType or jobT.exec
+         local tt            = t.jobT[kk] or { su = 0.0, num = 0, userT = {} }
+         tt.su               = tt.su  + su
+         tt.num              = tt.num + 1
+         tt.userT[jobT.user] = true
+         t.jobT[kk]          = tt
+         libT[k]             = t
       end
    end
 end
@@ -147,6 +153,36 @@ function reportLibT(libT)
    end
 
    local bt = BeautifulTbl:new{tbl=b, justifyT = {"Left", "Right", "Right"}}
+   io.stdout:write(bt:build_tbl(),"\n");
+
+   a = {}
+
+   for kkk,vvv in pairs(libT) do
+      if (kkk:find("mkl/")) then
+         local jobT = vvv.jobT
+         for k,v in pairsByKeys(jobT) do
+            local u = {}
+            for user in pairsByKeys(v.userT) do
+               u[#u+1] = user
+            end
+            local userStr = concatTbl(u,":")
+            a[#a+1] = { name=k, su=v.su, num=v.num, users=userStr}
+         end
+      end
+   end
+
+   table.sort(a,function(x,y) return x.su > y.su end)
+
+
+   b[#b+1] = { "ExecType","Total SU ", "Users" }
+   b[#b+1] = { "--------","-------- ", "-----" }
+   
+   for i = 1, #a do
+      local su = fmt:format(a[i].su)
+      b[#b+1]  = {a[i].name, su, a[i].users)}
+   end
+
+   bt = BeautifulTbl:new{tbl=b, justifyT = {"Left", "Right", "left"}}
    io.stdout:write(bt:build_tbl(),"\n");
 end
 
