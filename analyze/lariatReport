@@ -156,6 +156,10 @@ function reportLibT(libT)
    local bt = BeautifulTbl:new{tbl=b, justifyT = {"Left", "Right", "Right"}}
    io.stdout:write(bt:build_tbl(),"\n");
 
+   local masterTbl = masterTbl()
+   
+   if (not masterTbl.mklUsers) then return end
+
    a = {}
 
    for kkk,vvv in pairs(libT) do
@@ -380,6 +384,16 @@ function options()
       action  = 'store_true',
       help    = "report the max user",
    }
+
+   cmdlineParser:add_option{ 
+      name    = {'--mklUsers'},
+      dest    = 'maxUsers',
+      action  = 'store_true',
+      help    = "report all mklUsers",
+   }
+   
+
+
    cmdlineParser:add_option{ 
       name    = {'-d','--debug'},
       dest    = 'debug',
