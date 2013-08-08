@@ -179,7 +179,7 @@ function reportLibT(libT)
    
    for i = 1, #a do
       local su = fmt:format(a[i].su)
-      b[#b+1]  = {a[i].name, su, a[i].users)}
+      b[#b+1]  = {a[i].name, su, a[i].users}
    end
 
    bt = BeautifulTbl:new{tbl=b, justifyT = {"Left", "Right", "left"}}
