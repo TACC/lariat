@@ -341,7 +341,12 @@ function main()
                end
             end
             local s = concatTbl(a,"\n")
-            load(s)()
+            local func, msg = load(s)
+            if (func) then
+               func()
+            else
+               io.stderr:write("Problem with: ",pargs[i],"\n")
+            end
             processSgeT(sgeT, accT, execT, libT)
          end
       end
