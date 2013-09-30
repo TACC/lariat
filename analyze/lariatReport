@@ -342,6 +342,7 @@ function main()
             end
             local s = concatTbl(a,"\n")
             load(s)()
+            processSgeT(sgeT, accT, execT, libT)
          end
       end
    else
