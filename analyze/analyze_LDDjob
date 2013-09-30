@@ -16,7 +16,7 @@ SOURCEME_stampede=sourceme
 
 if [ "$SYSHOST" = ls4 ]; then
   EXTRA_OPTS="--repair"
-end
+fi
 
 
 eval MCLAY=\$MCLAY_$SYSHOST
