@@ -97,7 +97,14 @@ function processSgeT(sgeT, accT, execT, execMapT, libT)
             accT.script.su  = accT.script.su  + su
          end
          
-         local exec      = prefix .. barefilename(v.exec)
+         local found    = false
+         local execName = barefilename(v.exec)
+         local exec     = prefix .. execName
+         for k, vv in pairs(ExecMapPatternT) do
+            if (execName:find(k)) then
+               exec = vv
+            end
+         end
 
          local t         = execT[exec] or { num=0, su = 0, job={id="", su = 0},userT={}}
          t.su            = t.su  + su
@@ -110,21 +117,19 @@ function processSgeT(sgeT, accT, execT, execMapT, libT)
          end
          execT[exec]     = t
          
-         local execName = barefilename(v.exec)
-         for k, vv in pairs(ExecMapPatternT) do
-            if (execName:find(k)) then
-               t = execMapT[vv] or { num = 0, su = 0, job={id="", su = 0}, userT={}}
-               t.su            = t.su  + su
-               t.num           = t.num + 1
-               t.userT[v.user] = (t.userT[v.user] or 0) + su
-               if (su > t.job.su) then
-                  t.job.su   = su
-                  t.job.id   = v.jobID
-                  t.job.user = v.user
-               end
-               execMapT[vv] = t
-               break
+
+         if (found) then
+            t = execMapT[vv] or { num = 0, su = 0, job={id="", su = 0}, userT={}}
+            t.su            = t.su  + su
+            t.num           = t.num + 1
+            t.userT[v.user] = (t.userT[v.user] or 0) + su
+            if (su > t.job.su) then
+               t.job.su   = su
+               t.job.id   = v.jobID
+               t.job.user = v.user
             end
+            execMapT[vv] = t
+            break
          end
 
          if (next(v.pkgT) ~= nil) then
