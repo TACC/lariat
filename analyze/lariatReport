@@ -99,14 +99,15 @@ function processSgeT(sgeT, accT, execT, execMapT, libT)
          
          local found    = false
          local execName = barefilename(v.exec)
-         local exec     = prefix .. execName
+         local execKey  = prefix .. execName
          for k, vv in pairs(ExecMapPatternT) do
             if (execName:find(k)) then
-               exec = vv
+               execKey = vv
+               found = true
             end
          end
 
-         local t         = execT[exec] or { num=0, su = 0, job={id="", su = 0},userT={}}
+         local t         = execT[execKey] or { num=0, su = 0, job={id="", su = 0},userT={}}
          t.su            = t.su  + su
          t.num           = t.num + 1
          t.userT[v.user] = (t.userT[v.user] or 0) + su
@@ -115,11 +116,11 @@ function processSgeT(sgeT, accT, execT, execMapT, libT)
             t.job.id   = v.jobID
             t.job.user = v.user
          end
-         execT[exec]     = t
+         execT[execKey]     = t
          
 
          if (found) then
-            t = execMapT[vv] or { num = 0, su = 0, job={id="", su = 0}, userT={}}
+            t = execMapT[execKey] or { num = 0, su = 0, job={id="", su = 0}, userT={}}
             t.su            = t.su  + su
             t.num           = t.num + 1
             t.userT[v.user] = (t.userT[v.user] or 0) + su
@@ -128,7 +129,7 @@ function processSgeT(sgeT, accT, execT, execMapT, libT)
                t.job.id   = v.jobID
                t.job.user = v.user
             end
-            execMapT[vv] = t
+            execMapT[execKey] = t
             break
          end
 
