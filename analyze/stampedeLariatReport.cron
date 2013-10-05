@@ -1,13 +1,17 @@
 #!/bin/bash
 # -*- shell-script -*-
 
+if [ "$1" = "--noMail" ]; then
+  NoMail="TRUE"
+fi
+
 today=$(date +%F)
 fn30="LariatReport-last30-$today.txt"
 
 
 /scratch/projects/lariatData/analyze_LDDjob $(find  /scratch/projects/lariatData/ -name 'lariatData-sgeT*.lua' -mmin -43200 ) > /scratch/projects/lariatData/last30/$fn30
 
-if [ -f /scratch/projects/lariatData/last30/$fn30 ]; then
+if [ -z "$NoMail" -a -f /scratch/projects/lariatData/last30/$fn30 ]; then
   echo "Lariat Report Last 30 days" | mail -s "$fn30" -a /scratch/projects/lariatData/last30/$fn30 natalie@tacc.utexas.edu
 fi
 
@@ -16,7 +20,7 @@ fn365="LariatReport-last365-$today.txt"
 
 /scratch/projects/lariatData/analyze_LDDjob $(find /scratch/projects/lariatData/ -name 'lariatData-sgeT*.lua' -mmin -525600 ) > /scratch/projects/lariatData/last365/$fn365
 
-if [ -f /scratch/projects/lariatData/last365/$fn365 ]; then
+if [ -z "$NoMail" -a -f /scratch/projects/lariatData/last365/$fn365 ]; then
   echo "Lariat Report Last 365 days (or 1/28/13 to now) which ever is shorter." | mail -s "$fn365" -a /scratch/projects/lariatData/last365/$fn365 natalie@tacc.utexas.edu
 fi
 
