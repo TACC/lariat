@@ -14,6 +14,11 @@ MCLAY_stampede=/home1/00515/mclay
 SOURCEME_ls4=sourceme
 SOURCEME_stampede=sourceme
 
+if [ "$SYSHOST" = ls4 ]; then
+  EXTRA_OPTS="--repair"
+fi
+
+
 eval MCLAY=\$MCLAY_$SYSHOST
 
 for i in $MCLAY/l/pkg/x86_64/luatools/luatools/ \
@@ -30,4 +35,4 @@ eval SOURCEME=\$SOURCEME_$SYSHOST
 
 module try-add lua
 
-$MCLAY/w/ibwrapper/analyze/lariatReport "$@"
+$MCLAY/w/ibwrapper/analyze/lariatReport $EXTRA_OPTS "$@"

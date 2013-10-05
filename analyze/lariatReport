@@ -20,6 +20,8 @@ local Optiks       = require("Optiks")
 local Version      = "1.4"
 local concatTbl    = table.concat
 local s_master     = {}
+local load         = (_VERSION == "Lua 5.1") and loadstring or load
+
 require("serializeTbl")
 require("string_split")
 require("fileOps")
@@ -361,9 +363,35 @@ function main()
 
    --declare("sgeT",{})
 
-   for i = 1,#pargs do
-      assert(loadfile(pargs[i]))()
-      processSgeT(sgeT, accT, execT, execMapT, libT)
+   if (masterTbl.repair) then
+      for i = 1, #pargs do
+         local f = io.open(pargs[i])
+         if (f) then
+            local whole = f:read("*all")
+            f:close()
+            local a = {}
+            for line in whole:split("\n") do
+               if (line:find("^%s+%d+ =")) then
+                  a[#a+1] = line:gsub("^(%s+)(%d+) *=",'%1["%2"] =')
+               else
+                  a[#a+1] = line
+               end
+            end
+            local s = concatTbl(a,"\n")
+            local func, msg = load(s)
+            if (func) then
+               func()
+            else
+               io.stderr:write("Problem with: ",pargs[i],"\n")
+            end
+            processSgeT(sgeT, accT, execT, execMapT, libT)
+         end
+      end
+   else
+      for i = 1,#pargs do
+         assert(loadfile(pargs[i]))()
+         processSgeT(sgeT, accT, execT, execMapT, libT)
+      end
    end
 
    local totalNum = accT.system.num + accT.user.num + accT.script.num
@@ -431,7 +459,12 @@ function options()
       help    = "report all mklUsers",
    }
    
-
+   cmdlineParser:add_option{ 
+      name    = {'--repair'},
+      dest    = 'repair',
+      action  = 'store_true',
+      help    = "repair",
+   }
 
    cmdlineParser:add_option{ 
       name    = {'-d','--debug'},
