@@ -28,7 +28,10 @@ local master    = {}
 local posix     = require("posix")
 
 ignoreT = {
+   time              = 1,
+   ['/usr/bin/time'] = 1,
    tacc_affinity     = 1,
+   env               = 1,
    getmode_affinity  = 1,
 }
 
