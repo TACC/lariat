@@ -5,6 +5,14 @@ if [ "$1" = "--noMail" ]; then
   NoMail="TRUE"
 fi
 
+myhost=$(hostname -f)
+myhost=${myhost%.tacc.utexas.edu}
+SYSHOST=${myhost#*.}
+
+if [ "$SYSHOST" = ls4 ]; then
+  NoMail="TRUE"
+fi
+
 today=$(date +%F)
 fn30="LariatReport-last30-$today.txt"
 
