@@ -159,6 +159,7 @@ function main()
    userT.startTime  = os.date("%c",masterTbl.startTime)
    userT.startEpoch = masterTbl.startTime
    userT.runTime    = masterTbl.runTime
+   userT.endEpoch   = masterTbl.endTime
    userT.exec       = execPath
    userT.execEpoch  = execEpoch
    userT.cwd        = posix.getcwd()
@@ -236,6 +237,12 @@ function options()
       dest   = 'startTime',
       action = 'store',
       help   = "epoch time for job start",
+   }
+   cmdlineParser:add_option{ 
+      name   = {'-e','--end'},
+      dest   = 'endTime',
+      action = 'store',
+      help   = "epoch time for job end",
    }
 
    cmdlineParser:add_option{ 

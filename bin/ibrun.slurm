@@ -489,7 +489,7 @@ if [ -x "$ibrunDir/checkExec" ]; then
 fi
 
 if [ -x "$ibrunDir/parseLDD" ]; then
-  $ibrunDir/parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --fn $pe_fn -- $fullcmd "$@"
+  $ibrunDir/parseLDD --map $pe_mapD --start $pe_startTime --runTime 0.0 --end $pe_startTime --fn $pe_fn -- $fullcmd "$@"
 fi
 
 
@@ -609,7 +609,7 @@ pe_endTime=`date +%s`
 pe_runTime=`echo "$pe_endTime - $pe_startTime" | bc -q`
 
 if [ -x "$ibrunDir/parseLDD" ]; then
-  $ibrunDir/parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --fn $pe_fn -- $fullcmd "$@"
+  $ibrunDir/parseLDD --map $pe_mapD --start $pe_startTime --runTime $pe_runTime --end $pe_endTime --fn $pe_fn -- $fullcmd "$@"
 fi
 
 if [ $res -ne 0 ]; then
