@@ -26,6 +26,7 @@ local getenv    = os.getenv
 local lfs       = require("lfs")
 local master    = {}
 local posix     = require("posix")
+local epoch     = false
 
 ignoreT = {
    time              = 1,
@@ -39,6 +40,29 @@ IgnoreDirA = {
   "/opt/apps/limic"  
 }
 
+function build_epoch()
+   if (posix.gettimeofday) then
+      local x1, x2 = posix.gettimeofday()
+      if (x2 == nil) then
+         epoch_type = "posix.gettimeofday() (1)"
+         epoch = function()
+            local t = posix.gettimeofday()
+            return t.sec + t.usec*1.0e-6
+         end
+      else
+         epoch_type = "posix.gettimeofday() (2)"
+         epoch = function()
+            local t1, t2 = posix.gettimeofday()
+            return t1  + t2*1.0e-6
+         end
+      end
+   else
+      epoch_type = "os.time"
+      epoch = function()
+         return os.time()
+      end
+   end
+end   
 
 
 function isExec(fn)
@@ -104,6 +128,10 @@ function main()
    local pargs      = masterTbl.pargs
    local cmd        = nil
 
+   ------------------------------------------------------------------
+   --  It is safe to use epoch after this line
+   build_epoch()
+
    -- open reverseMap file and read it in.
 
    reverseMapT = readRMap(masterTbl.reverseMapD)
@@ -150,20 +178,21 @@ function main()
 
 
    -- Add command line options to userT
-   userT.numThreads = getenv("OMP_NUM_THREADS") or "0"
-   userT.user       = getenv("USER")        or "unknown"
-   userT.numCores   = getenv(sysT.numCores) or "0"
-   userT.numNodes   = getenv(sysT.numNodes) or "0"
-   userT.account    = getenv(sysT.account)  or "unknown"
-   userT.jobID      = getenv(sysT.jobID)    or "unknown"
-   userT.startTime  = os.date("%c",masterTbl.startTime)
-   userT.startEpoch = masterTbl.startTime
-   userT.runTime    = masterTbl.runTime
-   userT.endEpoch   = masterTbl.endTime
-   userT.exec       = execPath
-   userT.execEpoch  = execEpoch
-   userT.cwd        = posix.getcwd()
-   userT.execModify = os.date("%c",execEpoch)
+   userT.numThreads   = getenv("OMP_NUM_THREADS") or "0"
+   userT.user         = getenv("USER")        or "unknown"
+   userT.numCores     = getenv(sysT.numCores) or "0"
+   userT.numNodes     = getenv(sysT.numNodes) or "0"
+   userT.account      = getenv(sysT.account)  or "unknown"
+   userT.jobID        = getenv(sysT.jobID)    or "unknown"
+   userT.startTime    = os.date("%c",masterTbl.startTime)
+   userT.startEpoch   = masterTbl.startTime
+   userT.runTime      = masterTbl.runTime
+   userT.endEpoch     = masterTbl.endTime
+   userT.currentEpoch = epoch()
+   userT.exec         = execPath
+   userT.execEpoch    = execEpoch
+   userT.cwd          = posix.getcwd()
+   userT.execModify   = os.date("%c",execEpoch)
 
    local HashSum = findInPath("sha1sum")
    if (HashSum ~= "") then
