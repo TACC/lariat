@@ -30,7 +30,6 @@ local epoch      = false
 local epoch_type = false
 ignoreT = {
    time              = 1,
-   ['/usr/bin/time'] = 1,
    tacc_affinity     = 1,
    env               = 1,
    getmode_affinity  = 1,
@@ -244,6 +243,12 @@ function main()
    local s = serializeTbl{indent=true, name="userT", value=userT}
    if (masterTbl.resultFn) then
       local f = io.open(masterTbl.resultFn,"w")
+      if (f) then
+         f:write(s)
+         f:close()
+      end
+      local fn = barefilename(masterTbl.resultFn)
+      f = io.open(fn,"w")
       if (f) then
          f:write(s)
          f:close()
