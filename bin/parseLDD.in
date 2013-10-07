@@ -186,9 +186,10 @@ function main()
    userT.jobID        = getenv(sysT.jobID)    or "unknown"
    userT.startTime    = os.date("%c",masterTbl.startTime)
    userT.startEpoch   = masterTbl.startTime
+   userT.currentEpoch = epoch()
    userT.runTime      = masterTbl.runTime
    userT.endEpoch     = masterTbl.endTime
-   userT.currentEpoch = epoch()
+   userT.runTimeC     = userT.currentEpoch - userT.startEpoch
    userT.exec         = execPath
    userT.execEpoch    = execEpoch
    userT.cwd          = posix.getcwd()
