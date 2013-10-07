@@ -18,16 +18,16 @@ require("serializeTbl")
 require("string_split")
 require("string_trim")
 require("VarDump")
-local Dbg       = require("Dbg")
-local Optiks    = require("Optiks")
-local Version   = "1.4"
-local concatTbl = table.concat
-local getenv    = os.getenv
-local lfs       = require("lfs")
-local master    = {}
-local posix     = require("posix")
-local epoch     = false
-
+local Dbg        = require("Dbg")
+local Optiks     = require("Optiks")
+local Version    = "1.4"
+local concatTbl  = table.concat
+local getenv     = os.getenv
+local lfs        = require("lfs")
+local master     = {}
+local posix      = require("posix")
+local epoch      = false
+local epoch_type = false
 ignoreT = {
    time              = 1,
    ['/usr/bin/time'] = 1,
