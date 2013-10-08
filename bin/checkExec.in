@@ -22,6 +22,8 @@ local concatTbl = table.concat
 local load      = (_VERSION == "Lua 5.1") and loadstring or load
 s_master        = {}
 ignoreT = {
+   time                                = 1,
+   ['/usr/bin/time']                   = 1,
    tacc_affinity                       = 1,
    env                                 = 1,
 }

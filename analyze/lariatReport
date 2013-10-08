@@ -43,11 +43,31 @@ IgnoreLibA = {
    "^libopa.so",
 }
 
+ExecMapPatternT = {
+   ['^charmrun']  = 'Charm++*',
+   ['^wrf']       = 'WRF*',
+   ['^vasp']      = 'VASP*',
+   ['^run%.cctm'] = 'CMAQ CCTM*',
+   ['^lmp_']      = 'LAMMPS*',
+   ['^mdrun']     = 'Gromacs*',
+   ['^enzo']      = 'ENZO*',
+   ['^dlpoly']    = 'DL_POLY*',
+   ['^su3_']      = 'MILC*',
+   ['^qcprog']    = 'QCHEM*',
+   ['^namd2']     = 'NAMD*',
+   ['^cactus']    = 'Cactus*',
+   ['^pw.x']      = 'Q. Esp*',
+   ['^pmemd']     = 'Amber*',
+   ['^sander']    = 'Amber*',
+   ['^charmm']    = 'CHARMM*',
+   ['^c37b1' ]    = 'CHARMM*',
+}
 
 
-function processSgeT(sgeT, accT, execT, libT)
+
+function processSgeT(sgeT, accT, execT, execMapT, libT)
    local dbg = Dbg:dbg()
-   dbg.start("processSgeT(sgeT, accT, execT, libT)")
+   dbg.start("processSgeT(sgeT, accT, execT, execMapT, libT)")
    for k, vA in pairs(sgeT) do
       dbg.print("jobID: ",k,"\n")
       for i = 1, #vA do
@@ -77,9 +97,17 @@ function processSgeT(sgeT, accT, execT, libT)
             accT.script.su  = accT.script.su  + su
          end
          
-         local exec      = prefix .. barefilename(v.exec)
+         local found    = false
+         local execName = barefilename(v.exec)
+         local execKey  = prefix .. execName
+         for k, vv in pairs(ExecMapPatternT) do
+            if (execName:find(k)) then
+               execKey = vv
+               found = true
+            end
+         end
 
-         local t         = execT[exec] or { num=0, su = 0, job={id="", su = 0},userT={}}
+         local t         = execT[execKey] or { num=0, su = 0, job={id="", su = 0},userT={}}
          t.su            = t.su  + su
          t.num           = t.num + 1
          t.userT[v.user] = (t.userT[v.user] or 0) + su
@@ -88,8 +116,23 @@ function processSgeT(sgeT, accT, execT, libT)
             t.job.id   = v.jobID
             t.job.user = v.user
          end
-         execT[exec]     = t
+         execT[execKey]     = t
          
+
+         if (found) then
+            t = execMapT[execKey] or { num = 0, su = 0, job={id="", su = 0}, userT={}}
+            t.su            = t.su  + su
+            t.num           = t.num + 1
+            t.userT[v.user] = (t.userT[v.user] or 0) + su
+            if (su > t.job.su) then
+               t.job.su   = su
+               t.job.id   = v.jobID
+               t.job.user = v.user
+            end
+            execMapT[execKey] = t
+            break
+         end
+
          if (next(v.pkgT) ~= nil) then
             recordLibT(su, v, v.pkgT, libT)
          end
@@ -298,17 +341,17 @@ function reportTop(execT, execFile)
       displayExecT(aa,msg)
    end
 
-
 end
 function masterTbl()
    return s_master
 end
 
 function main()
-   local dbg   = Dbg:dbg()
-   local execT = {}
-   local libT  = {}
-   local accT  = { 
+   local dbg      = Dbg:dbg()
+   local execMapT = {}
+   local execT    = {}
+   local libT     = {}
+   local accT     = { 
       system  = {num = 0, su    =  0 },
       user    = {num = 0, su    =  0 },
       script  = {num = 0, su    =  0 },
@@ -347,13 +390,13 @@ function main()
             else
                io.stderr:write("Problem with: ",pargs[i],"\n")
             end
-            processSgeT(sgeT, accT, execT, libT)
+            processSgeT(sgeT, accT, execT, execMapT, libT)
          end
       end
    else
       for i = 1,#pargs do
          assert(loadfile(pargs[i]))()
-         processSgeT(sgeT, accT, execT, libT)
+         processSgeT(sgeT, accT, execT, execMapT, libT)
       end
    end
 
@@ -382,6 +425,8 @@ function main()
    reportLibT(libT)   
 
    reportTop(execT, masterTbl.execFile)
+   reportTop(execMapT)
+
    dbg.fini()
 
 end
