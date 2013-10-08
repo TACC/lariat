@@ -81,6 +81,7 @@ function queueSystemMapper()
       sysT.numNodes = "NHOSTS"
       sysT.account  = "SGE_ACCOUNT"
       sysT.jobID    = "JOB_ID"
+      sysT.queue    = "QUEUE"
    end
 
    if (queueType == "SLURM") then
@@ -88,6 +89,7 @@ function queueSystemMapper()
       sysT.numNodes = "SLURM_NNODES"
       sysT.account  = "SLURM_TACC_ACCOUNT"
       sysT.jobID    = "SLURM_JOB_ID"
+      sysT.queue    = "SLURM_QUEUE"
    end
 
    return sysT
@@ -153,6 +155,7 @@ function main()
    userT.numNodes   = getenv(sysT.numNodes) or "0"
    userT.account    = getenv(sysT.account)  or "unknown"
    userT.jobID      = getenv(sysT.jobID)    or "unknown"
+   userT.queue      = getenv(sysT.queue)    or "unknown"
    userT.startTime  = os.date("%c",masterTbl.startTime)
    userT.startEpoch = masterTbl.startTime
    userT.runTime    = masterTbl.runTime
