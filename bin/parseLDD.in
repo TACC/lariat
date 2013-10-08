@@ -250,11 +250,14 @@ function main()
          f:write(s)
          f:close()
       end
-      local fn = barefilename(masterTbl.resultFn)
-      f = io.open(fn,"w")
-      if (f) then
-         f:write(s)
-         f:close()
+
+      if (getenv("TACC_PARSELDD_LOCAL_FILES")) then
+         local fn = barefilename(masterTbl.resultFn)
+         f = io.open(fn,"w")
+         if (f) then
+            f:write(s)
+            f:close()
+         end
       end
    end
 end
